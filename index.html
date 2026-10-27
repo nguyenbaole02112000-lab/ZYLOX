@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>ZYLOX</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;display:flex;justify-content:center;align-items:center;font-family:'Segoe UI',sans-serif}
+.game-container{position:relative;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;background:#70c5ce;overflow:hidden;box-shadow:0 0 20px rgba(0,0,0,.6);container-type:size}
+.bg-blur{position:absolute;inset:0;background-image:url('https://uploads.onecompiler.io/4572fw7d6/1793073103859/classicmap.png');background-size:cover;background-position:center;filter:blur(6px) brightness(.55) saturate(1.1);transform:scale(1.08);z-index:1;transition:background-image .3s}
+.bg-overlay{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.15) 0%,rgba(0,0,0,.65) 100%);z-index:2}
+.ui-layer{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;pointer-events:none}
+.play-btn,.best-score,.difficulty-container,.bottom-right-corner,.menu-corner,.creature-corner,.left-avatar{pointer-events:auto}
+.title-group{display:flex;flex-direction:column;align-items:center;gap:.2cqw;margin-bottom:2.5cqw;animation:floatTitle 4s ease-in-out infinite}
+@keyframes floatTitle{0%,100%{transform:translateY(0)}50%{transform:translateY(-1cqw)}}
+.game-name{font-size:9cqw;font-weight:900;letter-spacing:.08em;text-transform:uppercase;background:linear-gradient(180deg,#ffe600 0%,#ffa500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(.3cqw .3cqw 0 #000) drop-shadow(-.2cqw -.2cqw 0 #000) drop-shadow(.2cqw -.2cqw 0 #000) drop-shadow(-.2cqw .2cqw 0 #000) drop-shadow(.8cqw 1cqw 1.5cqw rgba(0,0,0,.8));transform:perspective(50cqw) rotateX(10deg)}
+.badge-text{font-size:2cqw;font-weight:700;letter-spacing:.3em;color:#fff;text-transform:uppercase;text-shadow:0 .2cqw .4cqw rgba(0,0,0,.9);background:rgba(0,0,0,.4);padding:.4cqw 1.2cqw;border-radius:.6cqw;border:.1cqw solid rgba(255,255,255,.2);display:inline-block}
+.map-type{opacity:.85}
+.difficulty-container{display:flex;align-items:center;justify-content:center;gap:1.5cqw;margin-bottom:2.5cqw;width:40cqw}
+.nav-btn{font-size:2.5cqw;font-weight:900;color:#fff;background:transparent;border:none;cursor:pointer;text-shadow:0 .2cqw .4cqw rgba(0,0,0,.8);transition:transform .1s,opacity .2s;display:flex;align-items:center;justify-content:center;width:3cqw}
+.nav-btn:hover{transform:scale(1.2)}
+.nav-btn:active{transform:scale(.9)}
+.nav-btn.hidden-btn{opacity:0;pointer-events:none}
+.diff-card{display:flex;align-items:center;justify-content:center;gap:.8cqw;font-size:2.2cqw;font-weight:900;letter-spacing:.1em;color:#fff;text-transform:uppercase;padding:.6cqw 1.5cqw;border-radius:.6cqw;border:.15cqw solid rgba(255,255,255,.3);text-shadow:0 .2cqw .4cqw rgba(0,0,0,.6);width:22cqw;text-align:center;transition:background-color .3s,transform .2s;box-shadow:0 .4cqw 1cqw rgba(0,0,0,.5)}
+.diff-icon{font-size:1.2em}
+.diff-card.pop{transform:scale(1.1)}
+.bg-easy{background-color:#4CAF50;border-color:#81C784}
+.bg-medium{background-color:#A1887F;border-color:#D7CCC8}
+.bg-hard{background-color:#212121;border-color:#616161}
+.bg-extreme{background-color:#7B1FA2;border-color:#BA68C8}
+.bg-nightmare{background-color:#B71C1C;border-color:#EF5350}
+.best-score{font-size:1.8cqw;font-weight:bold;color:#fff;padding:.8cqw 2cqw;background:rgba(0,0,0,.5);border:.2cqw solid #f7d51d;border-radius:99cqw;text-shadow:0 .1cqw .2cqw rgba(0,0,0,.8);box-shadow:0 0 1.5cqw rgba(247,213,29,.35);margin-bottom:2.5cqw;text-transform:uppercase}
+.best-score .num{color:#f7d51d;font-size:1.15em}
+.play-btn{padding:1cqw 3.5cqw;font-size:2.2cqw;font-weight:900;letter-spacing:.15em;color:#fff;background:linear-gradient(180deg,#ff6b6b,#d93636);border:.25cqw solid #8b1e1e;border-radius:1cqw;cursor:pointer;text-transform:uppercase;box-shadow:0 .5cqw 0 #8b1e1e,0 .8cqw 1.5cqw rgba(0,0,0,.5);transition:transform .08s,box-shadow .08s;text-shadow:0 .2cqw 0 rgba(0,0,0,.4)}
+.play-btn:hover{filter:brightness(1.08)}
+.play-btn:active{transform:translateY(.4cqw);box-shadow:0 .1cqw 0 #8b1e1e,0 .4cqw .8cqw rgba(0,0,0,.5)}
+.bottom-right-corner{position:absolute;bottom:6cqw;right:4cqw;display:flex;flex-direction:column;align-items:center;gap:1.5cqw;z-index:10}
+.map-selector{display:flex;gap:1.5cqw;pointer-events:auto}
+.map-item{position:relative;width:16cqw;aspect-ratio:16/9;border-radius:.6cqw;cursor:pointer;overflow:hidden;background:#222;border:.8cqw solid #f7d51d;box-shadow:0 .6cqw 1cqw rgba(0,0,0,.7);transition:transform .2s,filter .2s,box-shadow .2s}
+.map-item img{width:100%;height:100%;object-fit:cover;display:block}
+.map-item:hover,.map-item.active{transform:scale(1.05) translateY(-.5cqw);filter:brightness(1.1);box-shadow:0 1cqw 1.5cqw rgba(0,0,0,.9)}
+.map-item.active::after{content:'✔';position:absolute;bottom:5%;right:5%;background:#f7d51d;color:#000;font-size:1.2cqw;font-weight:bold;padding:.1cqw .4cqw;border-radius:50%;box-shadow:0 .2cqw .4cqw rgba(0,0,0,.5)}
+.menu-corner{position:absolute;top:2cqw;right:2cqw;z-index:10;cursor:pointer}
+.menu-icon-wrapper{width:9cqw;height:9cqw;border-radius:50%;border:.3cqw solid transparent;transition:transform .2s,filter .2s,border .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center}
+.menu-icon-wrapper:hover{transform:scale(1.1)}
+.menu-icon-wrapper.active{border:.8cqw solid #f7d51d;transform:scale(1.05) translateY(-.5cqw);filter:brightness(1.1);box-shadow:0 1cqw 1.5cqw rgba(0,0,0,.9)}
+.menu-svg{width:100%;height:100%;border-radius:50%;display:block}
+.creature-corner{position:absolute;top:5.5cqw;right:-3.5cqw;z-index:9}
+.creature-icon{width:20cqw;height:auto;object-fit:contain;opacity:0;transform:translateY(-2cqw) scale(.5);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:none}
+.creature-icon.show-creature{opacity:1;transform:translateY(0) scale(1)}
+.left-avatar{position:absolute;top:3cqw;left:3cqw;z-index:11;cursor:pointer;transition:transform .2s}
+.left-avatar:hover{transform:scale(1.05)}
+.left-avatar img{width:12cqw;height:auto;object-fit:contain;filter:drop-shadow(0 .5cqw 1cqw rgba(0,0,0,.6))}
+.map-preview-overlay{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4cqw 0;opacity:0;pointer-events:none;transition:opacity .3s}
+.map-preview-overlay.show{opacity:1;pointer-events:auto}
+.preview-bg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(8px) brightness(.4);z-index:-1;transition:background-image .3s}
+.close-circle-btn{position:absolute;top:3cqw;right:3cqw;width:4.5cqw;height:4.5cqw;background:linear-gradient(180deg,#ff5252,#d32f2f);border:.2cqw solid #b71c1c;border-radius:50%;cursor:pointer;box-shadow:0 .4cqw 0 #b71c1c,0 .6cqw 1cqw rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;transition:transform .1s,filter .1s;z-index:101}
+.close-circle-btn:hover{filter:brightness(1.1)}
+.close-circle-btn:active{transform:scale(.9) translateY(.2cqw);box-shadow:0 .1cqw 0 #b71c1c,0 .2cqw .5cqw rgba(0,0,0,.5)}
+.close-circle-btn::before,.close-circle-btn::after{content:'';position:absolute;width:50%;height:.4cqw;background:#fff;border-radius:1cqw}
+.close-circle-btn::before{transform:rotate(45deg)}
+.close-circle-btn::after{transform:rotate(-45deg)}
+.preview-header{font-size:3.5cqw;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 .3cqw .6cqw rgba(0,0,0,.8)}
+.preview-carousel{display:flex;align-items:center;justify-content:center;gap:2cqw;width:100%}
+.preview-image-container{width:60cqw;aspect-ratio:16/9;border-radius:1cqw;overflow:hidden;border:.5cqw solid #f7d51d;box-shadow:0 1cqw 3cqw rgba(0,0,0,.8),0 0 2cqw rgba(247,213,29,.4);background:#000;position:relative;transition:transform .2s,opacity .2s}
+.preview-image-container img{width:100%;height:100%;object-fit:cover;display:block}
+.preview-footer{display:flex;align-items:center;justify-content:center;height:6cqw;width:100%}
+.preview-btn{padding:1cqw 3cqw;font-size:2cqw;font-weight:bold;color:#fff;border-radius:.8cqw;cursor:pointer;text-transform:uppercase;transition:transform .1s,filter .1s;border:none}
+.preview-btn:active{transform:scale(.95)}
+.btn-select{background:linear-gradient(180deg,#4CAF50,#2E7D32);border:.2cqw solid #1B5E20;box-shadow:0 .4cqw 0 #1B5E20}
+.btn-select:hover{filter:brightness(1.1)}
+.is-selected-text{font-size:2.5cqw;font-weight:900;color:#4CAF50;text-transform:uppercase;letter-spacing:.1em;display:none;text-shadow:0 .2cqw .4cqw rgba(0,0,0,.8);animation:popIn .3s ease-out}
+@keyframes popIn{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.ui-layer.hidden{display:none}
+.map-selector.hidden{display:none}
+.feedback-overlay{position:absolute;inset:0;z-index:150;background:rgba(0,0,0,.75);display:flex;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.feedback-overlay.show{opacity:1;pointer-events:auto}
+.feedback-scroll{position:relative;background:#fdf5e6;width:45cqw;max-width:90vw;padding:3cqw;border-left:.4cqw solid #d4b483;border-right:.4cqw solid #d4b483;border-radius:.5cqw;box-shadow:0 1cqw 3cqw rgba(0,0,0,.8),inset 0 0 3cqw rgba(139,90,43,.2);display:flex;flex-direction:column;align-items:center;transform:scale(.9);transition:transform .3s}
+.feedback-overlay.show .feedback-scroll{transform:scale(1)}
+.feedback-scroll::before,.feedback-scroll::after{content:'';position:absolute;left:-1cqw;width:calc(100% + 2cqw);height:2cqw;background:linear-gradient(180deg,#8b5a2b,#5c3a21);border-radius:1cqw;box-shadow:0 .4cqw .5cqw rgba(0,0,0,.5);z-index:2}
+.feedback-scroll::before{top:-1cqw}
+.feedback-scroll::after{bottom:-1cqw}
+.feedback-scroll .close-circle-btn{top:1cqw;right:1cqw;width:3.5cqw;height:3.5cqw}
+.feedback-scroll h2{color:#4a2e15;font-size:2.5cqw;margin-bottom:1.5cqw;text-transform:uppercase;text-shadow:0 .1cqw 0 rgba(255,255,255,.5);font-family:'Georgia',serif}
+.feedback-scroll textarea{width:100%;height:12cqw;padding:1cqw;border-radius:.5cqw;border:.15cqw solid #8b5a2b;background:rgba(255,255,255,.4);color:#3b1f0b;font-size:1.8cqw;font-family:'Georgia',serif;resize:none;outline:none;margin-bottom:2cqw}
+.feedback-scroll textarea:focus{background:rgba(255,255,255,.8);box-shadow:0 0 1cqw rgba(139,90,43,.5)}
+.feedback-scroll textarea::placeholder{color:#7a5a3b;font-style:italic}
+.feedback-actions{display:flex;gap:1.5cqw;width:100%;justify-content:center}
+.btn-send{padding:1cqw 3cqw;font-size:1.8cqw;font-weight:900;color:#fff;background:linear-gradient(180deg,#6d4c41,#4e342e);border:.2cqw solid #3e2723;border-radius:.8cqw;cursor:pointer;text-transform:uppercase;box-shadow:0 .4cqw 0 #3e2723;transition:transform .1s,filter .1s;font-family:'Georgia',serif}
+.btn-send:hover{filter:brightness(1.2)}
+.btn-send:active{transform:translateY(.2cqw);box-shadow:0 .1cqw 0 #3e2723}
+</style>
+</head>
+<body>
+<div class="game-container">
+<div class="bg-blur"></div>
+<div class="bg-overlay"></div>
+<div class="left-avatar" onclick="openFeedback()"><img src="https://uploads.onecompiler.io/4572fw7d6/457e6dv78/lenguyenbao-rmbg.png" alt="Admin"></div>
+<div class="menu-corner" onmouseenter="handleMenuHover(true)" onmouseleave="handleMenuHover(false)">
+<div class="menu-icon-wrapper" id="menuIcon" onclick="toggleMenuSelection()">
+<svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#000"/><g fill="#fff"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg>
+</div>
+</div>
+<div class="creature-corner"><img class="creature-icon" id="creatureIcon" src="https://uploads.onecompiler.io/4572fw7d6/457da9c3c/creature-rmbg.png" alt="Creature"></div>
+<div class="ui-layer" id="lobby">
+<div class="title-group">
+<div class="game-name">ZYLOX</div>
+<div class="badge-text map-type" id="currentMapName">Classic Map</div>
+</div>
+<div class="difficulty-container">
+<button class="nav-btn" id="prevBtn" onclick="changeDifficulty(-1)">&lt;</button>
+<div class="diff-card bg-easy" id="diffCard"><span class="diff-icon" id="diffIcon">🌱</span><span id="diffName">Easy</span></div>
+<button class="nav-btn" id="nextBtn" onclick="changeDifficulty(1)">&gt;</button>
+</div>
+<div class="best-score">🏆 Best: <span class="num" id="bestScore">0</span></div>
+<button class="play-btn" id="playBtn" onclick="startGame()">▶ Play</button>
+</div>
+<div class="bottom-right-corner" id="mapSelector">
+<div class="map-selector">
+<div class="map-item active" onclick="openMapPreview()"><img src="https://uploads.onecompiler.io/4572fw7d6/1793073103859/classicmap.png" alt="Classic Map"></div>
+</div>
+</div>
+<div class="map-preview-overlay" id="mapPreview">
+<div class="preview-bg" id="previewBg"></div>
+<div class="close-circle-btn" onclick="closeMapPreview()"></div>
+<div class="preview-header" id="previewTitle">Tên Map</div>
+<div class="preview-carousel">
+<button class="nav-btn" id="prevPreviewBtn" onclick="changePreviewMap(-1)">&lt;</button>
+<div class="preview-image-container"><img id="previewImg" src="" alt="Map"></div>
+<button class="nav-btn" id="nextPreviewBtn" onclick="changePreviewMap(1)">&gt;</button>
+</div>
+<div class="preview-footer">
+<button class="preview-btn btn-select" id="btnConfirmMap" onclick="confirmMapSelection()">SELECT</button>
+<span class="is-selected-text" id="selectedText">✓ EQUIPPED</span>
+</div>
+</div>
+<div class="feedback-overlay" id="feedbackOverlay">
+<div class="feedback-scroll">
+<div class="close-circle-btn" onclick="closeFeedback()"></div>
+<h2>📜 Send Feedback</h2>
+<textarea id="feedbackText" placeholder="Write your message here..."></textarea>
+<div class="feedback-actions">
+<button class="btn-send" onclick="submitFeedback()">SUBMIT</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+let isAdmin=localStorage.getItem('zylox_admin')==='true';
+const cIcon=document.getElementById('creatureIcon'),mIcon=document.getElementById('menuIcon');let isMenuSel=false;
+function handleMenuHover(h){h?cIcon.classList.add('show-creature'):(!isMenuSel&&cIcon.classList.remove('show-creature'))}
+function toggleMenuSelection(){isMenuSel=!isMenuSel;if(isMenuSel){mIcon.classList.add('active');cIcon.classList.add('show-creature')}else{mIcon.classList.remove('active');if(!document.querySelector('.menu-corner').matches(':hover'))cIcon.classList.remove('show-creature')}}
+function bestKey(n){return 'flappy_best_'+n.toLowerCase()}
+function loadBest(n){return +localStorage.getItem(bestKey(n))||0}
+const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',class:'bg-medium',icon:'⚡',speed:6},{name:'Hard',class:'bg-hard',icon:'🔥',speed:8},{name:'Extreme',class:'bg-extreme',icon:'☠️',speed:10},{name:'Nightmare',class:'bg-nightmare',icon:'😈',speed:12}];
+let diffIdx=0,best=loadBest(diffs[diffIdx].name);document.getElementById('bestScore').textContent=best;
+function updateDiffUI(){const d=diffs[diffIdx];document.getElementById('diffIcon').textContent=d.icon;document.getElementById('diffName').textContent=d.name;const c=document.getElementById('diffCard');c.className=`diff-card ${d.class}`;c.classList.add('pop');setTimeout(()=>c.classList.remove('pop'),200);document.getElementById('prevBtn').classList.toggle('hidden-btn',diffIdx===0);document.getElementById('nextBtn').classList.toggle('hidden-btn',diffIdx===diffs.length-1);best=loadBest(d.name);document.getElementById('bestScore').textContent=best}
+function changeDifficulty(d){const n=diffIdx+d;if(n>=0&&n<diffs.length){diffIdx=n;updateDiffUI()}}
+updateDiffUI();
+const maps=[{name:'Classic Map',img:'https://uploads.onecompiler.io/4572fw7d6/1793073103859/classicmap.png',avail:true},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false}];let mapIdx=0,equipMap='Classic Map';
+function updateMapUI(){const m=maps[mapIdx];document.getElementById('previewBg').style.backgroundImage=`url('${m.img}')`;document.getElementById('previewImg').src=m.img;document.getElementById('previewTitle').textContent=m.name;if(m.name==='Coming Soon'){document.getElementById('btnConfirmMap').style.display='none';document.getElementById('selectedText').style.display='none'}else{const eq=equipMap===m.name;document.getElementById('btnConfirmMap').style.display=eq?'none':'block';document.getElementById('selectedText').style.display=eq?'block':'none'}document.getElementById('prevPreviewBtn').classList.toggle('hidden-btn',mapIdx===0);document.getElementById('nextPreviewBtn').classList.toggle('hidden-btn',mapIdx===maps.length-1)}
+function openMapPreview(){mapIdx=maps.findIndex(m=>m.name===equipMap);if(mapIdx===-1)mapIdx=0;updateMapUI();document.getElementById('mapPreview').classList.add('show')}
+function closeMapPreview(){document.getElementById('mapPreview').classList.remove('show')}
+function changePreviewMap(d){const n=mapIdx+d;if(n>=0&&n<maps.length){mapIdx=n;const c=document.querySelector('.preview-image-container');c.style.transform='scale(0.95)';c.style.opacity='0.7';setTimeout(()=>{updateMapUI();c.style.transform='scale(1)';c.style.opacity='1'},150)}}
+function confirmMapSelection(){const m=maps[mapIdx];if(!m.avail&&!isAdmin)return;equipMap=m.name;document.getElementById('currentMapName').textContent=equipMap;updateMapUI()}
+function openFeedback(){document.getElementById('feedbackOverlay').classList.add('show')}
+function closeFeedback(){document.getElementById('feedbackOverlay').classList.remove('show')}
+function submitFeedback(){const t=document.getElementById('feedbackText').value.trim();if(t){if(t.toLowerCase()==='zylox2010'){isAdmin=true;localStorage.setItem('zylox_admin','true');maps[1].avail=true;alert('👑 Chúc mừng! Bạn đã được cấp quyền Admin.');updateMapUI()}else{alert('Cảm ơn bạn đã gửi phản hồi!')}document.getElementById('feedbackText').value='';closeFeedback()}else{alert('Vui lòng nhập nội dung trước khi gửi!')}}
+function startGame(){
+  localStorage.setItem('zylox_speed', diffs[diffIdx].speed);
+  localStorage.setItem('zylox_diff', diffs[diffIdx].name);
+  window.location.href = 'classic.html'; 
+}
+</script>
+</body>
+</html>
