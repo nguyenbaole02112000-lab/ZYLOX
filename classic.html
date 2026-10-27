@@ -47,7 +47,7 @@ function render(){drawBackground();pipes.forEach(drawPipe);if(state!=='gameover'
 let lastT=performance.now(),acc=0;
 function loop(t){const dt=Math.min(t-lastT,250);lastT=t;acc+=dt;while(acc>=16.666){update();acc-=16.666}render();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
-function exitToLobby(){window.location.href='lobby.html'}
+function exitToLobby(){window.location.href='index.html'}
 </script>
 </body>
 </html>
