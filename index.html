@@ -42,12 +42,12 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;display:flex;ju
 .map-item:hover,.map-item.active{transform:scale(1.05) translateY(-.5cqw);filter:brightness(1.1);box-shadow:0 1cqw 1.5cqw rgba(0,0,0,.9)}
 .map-item.active::after{content:'✔';position:absolute;bottom:5%;right:5%;background:#f7d51d;color:#000;font-size:1.2cqw;font-weight:bold;padding:.1cqw .4cqw;border-radius:50%;box-shadow:0 .2cqw .4cqw rgba(0,0,0,.5)}
 .menu-corner{position:absolute;top:2cqw;right:2cqw;z-index:10;cursor:pointer}
-.menu-icon-wrapper{width:9cqw;height:9cqw;border-radius:50%;border:.3cqw solid transparent;transition:transform .2s,filter .2s,border .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center}
+.menu-icon-wrapper{width:5cqw;height:5cqw;border-radius:50%;background:#000;box-shadow:0 0 0 0.3cqw transparent;transition:transform .2s,filter .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .menu-icon-wrapper:hover{transform:scale(1.1)}
-.menu-icon-wrapper.active{border:.8cqw solid #f7d51d;transform:scale(1.05) translateY(-.5cqw);filter:brightness(1.1);box-shadow:0 1cqw 1.5cqw rgba(0,0,0,.9)}
-.menu-svg{width:100%;height:100%;border-radius:50%;display:block}
-.creature-corner{position:absolute;top:5.5cqw;right:-3.5cqw;z-index:9}
-.creature-icon{width:20cqw;height:auto;object-fit:contain;opacity:0;transform:translateY(-2cqw) scale(.5);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:none}
+.menu-icon-wrapper.active{box-shadow:0 0 0 0.6cqw #f7d51d,0 1cqw 1.5cqw rgba(0,0,0,.9);transform:scale(1.0) translateY(-.5cqw);filter:brightness(1.1)}
+.menu-svg{width:100%;height:100%;display:block}
+.creature-corner{position:absolute;top:4.9cqw;right:-0.5cqw;z-index:9}
+.creature-icon{width:10cqw;height:auto;object-fit:contain;opacity:0;transform:translateY(-2cqw) scale(.5);transition:all .3s cubic-bezier(.25,1,.5,1);pointer-events:none}
 .creature-icon.show-creature{opacity:1;transform:translateY(0) scale(1)}
 .left-avatar{position:absolute;top:3cqw;left:3cqw;z-index:11;cursor:pointer;transition:transform .2s}
 .left-avatar:hover{transform:scale(1.05)}
