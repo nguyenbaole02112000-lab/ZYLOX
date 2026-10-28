@@ -151,4 +151,29 @@ html,body{width:100%;height:100%;background:#000;overflow:hidden;display:flex;ju
 <script>
 let isAdmin=localStorage.getItem('zylox_admin')==='true';
 const cIcon=document.getElementById('creatureIcon'),mIcon=document.getElementById('menuIcon');let isMenuSel=false;
-function
+function handleMenuHover(h){h?cIcon.classList.add('show-creature'):(!isMenuSel&&cIcon.classList.remove('show-creature'))}
+function toggleMenuSelection(){isMenuSel=!isMenuSel;if(isMenuSel){mIcon.classList.add('active');cIcon.classList.add('show-creature')}else{mIcon.classList.remove('active');if(!document.querySelector('.menu-corner').matches(':hover'))cIcon.classList.remove('show-creature')}}
+function bestKey(n){return 'flappy_best_'+n.toLowerCase()}
+function loadBest(n){return +localStorage.getItem(bestKey(n))||0}
+const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',class:'bg-medium',icon:'⚡',speed:6},{name:'Hard',class:'bg-hard',icon:'🔥',speed:8},{name:'Extreme',class:'bg-extreme',icon:'☠️',speed:10},{name:'Nightmare',class:'bg-nightmare',icon:'😈',speed:12}];
+let diffIdx=0,best=loadBest(diffs[diffIdx].name);document.getElementById('bestScore').textContent=best;
+function updateDiffUI(){const d=diffs[diffIdx];document.getElementById('diffIcon').textContent=d.icon;document.getElementById('diffName').textContent=d.name;const c=document.getElementById('diffCard');c.className=`diff-card ${d.class}`;c.classList.add('pop');setTimeout(()=>c.classList.remove('pop'),200);document.getElementById('prevBtn').classList.toggle('hidden-btn',diffIdx===0);document.getElementById('nextBtn').classList.toggle('hidden-btn',diffIdx===diffs.length-1);best=loadBest(d.name);document.getElementById('bestScore').textContent=best}
+function changeDifficulty(d){const n=diffIdx+d;if(n>=0&&n<diffs.length){diffIdx=n;updateDiffUI()}}
+updateDiffUI();
+const maps=[{name:'Classic Map',img:'https://uploads.onecompiler.io/4572fw7d6/1793073103859/classicmap.png',avail:true},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false}];let mapIdx=0,equipMap='Classic Map';
+function updateMapUI(){const m=maps[mapIdx];document.getElementById('previewBg').style.backgroundImage=`url('${m.img}')`;document.getElementById('previewImg').src=m.img;document.getElementById('previewTitle').textContent=m.name;if(m.name==='Coming Soon'){document.getElementById('btnConfirmMap').style.display='none';document.getElementById('selectedText').style.display='none'}else{const eq=equipMap===m.name;document.getElementById('btnConfirmMap').style.display=eq?'none':'block';document.getElementById('selectedText').style.display=eq?'block':'none'}document.getElementById('prevPreviewBtn').classList.toggle('hidden-btn',mapIdx===0);document.getElementById('nextPreviewBtn').classList.toggle('hidden-btn',mapIdx===maps.length-1)}
+function openMapPreview(){mapIdx=maps.findIndex(m=>m.name===equipMap);if(mapIdx===-1)mapIdx=0;updateMapUI();document.getElementById('mapPreview').classList.add('show')}
+function closeMapPreview(){document.getElementById('mapPreview').classList.remove('show')}
+function changePreviewMap(d){const n=mapIdx+d;if(n>=0&&n<maps.length){mapIdx=n;const c=document.querySelector('.preview-image-container');c.style.transform='scale(0.95)';c.style.opacity='0.7';setTimeout(()=>{updateMapUI();c.style.transform='scale(1)';c.style.opacity='1'},150)}}
+function confirmMapSelection(){const m=maps[mapIdx];if(!m.avail&&!isAdmin)return;equipMap=m.name;document.getElementById('currentMapName').textContent=equipMap;updateMapUI()}
+function openFeedback(){document.getElementById('feedbackOverlay').classList.add('show')}
+function closeFeedback(){document.getElementById('feedbackOverlay').classList.remove('show')}
+function submitFeedback(){const t=document.getElementById('feedbackText').value.trim();if(t){if(t.toLowerCase()==='zylox2010'){isAdmin=true;localStorage.setItem('zylox_admin','true');maps[1].avail=true;alert('👑 Chúc mừng! Bạn đã được cấp quyền Admin.');updateMapUI()}else{alert('Cảm ơn bạn đã gửi phản hồi!')}document.getElementById('feedbackText').value='';closeFeedback()}else{alert('Vui lòng nhập nội dung trước khi gửi!')}}
+function startGame(){
+  localStorage.setItem('zylox_speed', diffs[diffIdx].speed);
+  localStorage.setItem('zylox_diff', diffs[diffIdx].name);
+  window.location.href = 'classic.html'; 
+}
+</script>
+</body>
+</html>
