@@ -3,6 +3,50 @@
   const bundled = [{ id: 'bundled:amen-break', name: 'Amen Break', source: 'bundled', url: 'assets/music/amen-break.mp3' }];
   const audio = new Audio();
   audio.loop = true;
+  const volumeDefaults = { music: 60, ui: 35, game: 55 };
+  function getVolume(channel) {
+    const fallback = volumeDefaults[channel];
+    if (fallback === undefined) return 0;
+    const saved = localStorage.getItem('zylox_volume_' + channel);
+    const value = saved === null ? fallback : Number(saved);
+    return Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : fallback;
+  }
+  audio.volume = getVolume('music') / 100;
+  let soundContext = null;
+  function playSound(kind) {
+    const channel = kind === 'ui' ? 'ui' : 'game';
+    const volume = getVolume(channel) / 100;
+    if (!volume) return;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    try {
+      soundContext ||= new Ctx();
+      if (soundContext.state === 'suspended') soundContext.resume().catch(() => {});
+      const presets = { ui:[620, .05], flap:[330, .07], score:[820, .1], candy:[1050, .16], gameover:[170, .22] };
+      const [frequency, duration] = presets[kind] || presets.ui;
+      const oscillator = soundContext.createOscillator();
+      const gain = soundContext.createGain();
+      const now = soundContext.currentTime;
+      oscillator.type = kind === 'gameover' ? 'triangle' : 'sine';
+      oscillator.frequency.setValueAtTime(frequency, now);
+      gain.gain.setValueAtTime(volume * .12, now);
+      gain.gain.exponentialRampToValueAtTime(.001, now + duration);
+      oscillator.connect(gain); gain.connect(soundContext.destination);
+      oscillator.start(now); oscillator.stop(now + duration);
+    } catch (_) {}
+  }
+  function setVolume(channel, value) {
+    if (!(channel in volumeDefaults)) return;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return;
+    const volume = Math.max(0, Math.min(100, Math.round(number)));
+    localStorage.setItem('zylox_volume_' + channel, String(volume));
+    if (channel === 'music') audio.volume = volume / 100;
+  }
+  window.ZyloxSound = { getVolume, setVolume, play: playSound };
+  document.addEventListener('click', event => {
+    if (event.target.closest?.('button,.tab,.ccb,.mi,.miw,.la,.e-char-slot,.e-filter-option')) playSound('ui');
+  });
   const custom = new Map();
   const listeners = new Set();
   let config = null, objectUrl = null, status = '', pendingSeek = false, waitingForGesture = false;

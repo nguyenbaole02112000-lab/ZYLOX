@@ -22,15 +22,16 @@
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
 </div><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
-function loadBest(m,d){return +localStorage.getItem(bestKey(m,d))||0}
-function saveBest(m,d,v){localStorage.setItem(bestKey(m,d),v)}
+function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
+function saveBest(m,d,v){window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
+localStorage.setItem('zylox_time','Night');
 let diffName=localStorage.getItem('zylox_diff')||'Easy',mapName=localStorage.getItem('zylox_map')||'Halloween',best=loadBest(mapName,diffName);
 const diffConfigs = {
-  'Easy':{baseSpd:4,gap:190,clicks:5},
-  'Medium':{baseSpd:6,gap:175,clicks:5},
-  'Hard':{baseSpd:8,gap:160,clicks:5},
-  'Extreme':{baseSpd:10,gap:150,clicks:5},
-  'Nightmare':{baseSpd:12,gap:140,clicks:5}
+  'Easy':{baseSpd:4,gap:190,clicks:5,candyChance:.25},
+  'Medium':{baseSpd:6,gap:175,clicks:5,candyChance:.30},
+  'Hard':{baseSpd:8,gap:160,clicks:5,candyChance:.35},
+  'Extreme':{baseSpd:10,gap:150,clicks:5,candyChance:.40},
+  'Nightmare':{baseSpd:12,gap:140,clicks:5,candyChance:.50}
 };
 let cfg = diffConfigs[diffName] || diffConfigs['Easy'];
 let pSpd = cfg.baseSpd;
@@ -40,6 +41,9 @@ milestoneEl.textContent='SCORE: '+best;
 const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),BH=540,PW=60,PD=480,GRAV=.7,FLP=-10;
 let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0;
 const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
+function candyTotal(){return window.ZyloxAccount?.getCandy()||0}
+function addCandy(){window.ZyloxAccount?.addCandy()}
+function makePipe(x,topHeight){return {x,topHeight,scored:false,candy:mapName==='Halloween'&&Math.random()<cfg.candyChance}}
 const tutorialUI=document.getElementById('tutorialUI');
 let isFlapping = false;
 function drawBatWings(x, y) {
@@ -88,7 +92,6 @@ function drawPipe(p){
   ctx.quadraticCurveTo(p.x + PW, p.topHeight+PG, p.x + PW, p.topHeight+PG + 20);
   ctx.lineTo(p.x + PW, H);
   ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = '#00ff00'; ctx.lineWidth = 2; ctx.stroke();
   ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = 2; ctx.beginPath();
   ctx.moveTo(p.x + PW/2 - 10, p.topHeight+PG + 10); ctx.lineTo(p.x + PW/2, p.topHeight+PG + 30); ctx.lineTo(p.x + PW/2 - 5, p.topHeight+PG + 45);
   ctx.stroke();
@@ -115,31 +118,41 @@ function resizeCanvas(){
   const vw=canvas.clientWidth,vh=canvas.clientHeight;scl=vh/BH;const dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.width=Math.round(vw*dpr);canvas.height=Math.round(vh*dpr);W=vw/scl;ctx.setTransform(scl*dpr,0,0,scl*dpr,0,0);H=BH;
   if(cr.y>H-100||cr.y<0)cr.y=H/2;
-  if(state==='playing'&&pipes.length>0){let lp=pipes[pipes.length-1];while(lp.x<W+PD){const th=getNextPipeTop(lp.topHeight);const np={x:lp.x+PD,topHeight:th,scored:false};pipes.push(np);lp=np;}}
+  if(state==='playing'&&pipes.length>0){let lp=pipes[pipes.length-1];while(lp.x<W+PD){const th=getNextPipeTop(lp.topHeight);const np=makePipe(lp.x+PD,th);pipes.push(np);lp=np;}}
 }
 window.addEventListener('resize',resizeCanvas);resizeCanvas();
-function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;tutorialUI.style.display='none';pipes.push({x:W, topHeight: (H-PG)/2, scored:false});}
-function flap(){if(state==='ready'){resetGame();cr.vy=FLP}else if(state==='playing')cr.vy=FLP;else if(state==='gameover')resetGame()}
+function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;tutorialUI.style.display='none';pipes.push(makePipe(W,(H-PG)/2));}
+function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'){resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='playing'){cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='gameover')resetGame()}
 document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();flap()}});canvas.addEventListener('mousedown',flap);canvas.addEventListener('touchstart',e=>{e.preventDefault();flap()},{passive:false});
 function update(step){
   frame+=step;parts=parts.filter(p=>{p.x+=p.vx*step;p.y+=p.vy*step+.15*step*(step-1)/2;p.vy+=.15*step;p.life-=step;return p.life>0});
   if(state!=='playing')return;
   cr.y+=cr.vy*step+GRAV*step*(step+1)/2;cr.vy+=GRAV*step;cr.rot += (((cr.vy < 0) ? -.26 : Math.min(.43, cr.vy * .05)) - cr.rot) * (1-Math.pow(.9,step));
   cSpd = pSpd + Math.min(score * .05, 2.5) + Math.floor(frame / 600) * .5;
-  if(pipes.length===0 || pipes[pipes.length-1].x<=W-PD){const prevTop = pipes.length>0 ? pipes[pipes.length-1].topHeight : undefined;pipes.push({x:W, topHeight:getNextPipeTop(prevTop), scored:false});}
+  if(pipes.length===0 || pipes[pipes.length-1].x<=W-PD){const prevTop = pipes.length>0 ? pipes[pipes.length-1].topHeight : undefined;pipes.push(makePipe(W,getNextPipeTop(prevTop)));}
   for(const p of pipes){
     p.x-=cSpd*step;
-    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;if(score>best){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
+    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
     if(cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
+    if(state==='playing'&&p.candy&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.candy=false;addCandy();window.ZyloxSound?.play('candy');}
   }
   pipes=pipes.filter(p=>p.x+PW>0);
   if(cr.y+cr.r>H-60||cr.y-cr.r<0)gameOver();
 }
-function gameOver(){if(state==='gameover')return;state='gameover';for(let i=0;i<20;i++)parts.push({x:cr.x,y:cr.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8-2,life:40,color:['#ff3b3b','#e0c8ff','#b794f6'][i%3]});}
+function gameOver(){if(state==='gameover')return;state='gameover';window.ZyloxSound?.play('gameover');for(let i=0;i<20;i++)parts.push({x:cr.x,y:cr.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8-2,life:40,color:['#ff3b3b','#e0c8ff','#b794f6'][i%3]});}
+function drawCandy(p){
+  const x=p.x+PW/2,y=p.topHeight+PG/2;
+  ctx.save();ctx.translate(x,y);ctx.shadowBlur=12;ctx.shadowColor='#ff9d31';
+  ctx.fillStyle='#ffb13b';ctx.beginPath();ctx.moveTo(-18,-8);ctx.lineTo(-10,0);ctx.lineTo(-18,8);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(18,-8);ctx.lineTo(10,0);ctx.lineTo(18,8);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#f95a93';ctx.beginPath();ctx.ellipse(0,0,11,9,0,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#fff1c2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-4,-7);ctx.lineTo(3,7);ctx.moveTo(2,-8);ctx.lineTo(8,4);ctx.stroke();ctx.restore();
+}
 function render(){
-  drawBackground();pipes.forEach(drawPipe);if(state!=='gameover')drawCreature();
+  drawBackground();pipes.forEach(p=>{drawPipe(p);if(p.candy)drawCandy(p)});if(state!=='gameover')drawCreature();
   parts.forEach(p=>{ctx.globalAlpha=p.life/40;ctx.fillStyle=p.color;ctx.shadowBlur = 10;ctx.shadowColor = p.color;ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;ctx.shadowBlur=0;
   ctx.fillStyle='#ff3b3b';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.fillText(score,W/2,80);ctx.shadowBlur=0;
+  ctx.fillStyle='#ffc764';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('Candy: '+candyTotal(),W-24,H-20);
   if(state==='gameover'){
     ctx.fillStyle='rgba(10,6,18,.9)';ctx.strokeStyle='#ff3b3b';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(W/2-220,H/2-110,440,220, 15);ctx.fill();ctx.stroke();
     ctx.fillStyle='#ff3b3b';ctx.font='bold 38px Arial';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.fillText('GAME OVER',W/2,H/2-45);ctx.shadowBlur=0;
@@ -174,4 +187,5 @@ function gameLoop(timestamp){
 }
 requestAnimationFrame(gameLoop);
 function exitToLobby(){window.location.href='index.html'}
-</script><script src="music.js"></script></body></html>
+document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='SCORE: '+best});
+</script><script src="music.js"></script><script src="account.js"></script></body></html>

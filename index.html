@@ -18,6 +18,9 @@
 .nb:active{transform:scale(.9)}.nb.hb{opacity:0;pointer-events:none}
 .dcard{display:flex;align-items:center;justify-content:center;gap:1cqw;font-family:'Cinzel',serif;font-size:2.4cqw;font-weight:900;letter-spacing:.1em;color:#e0c8ff;text-transform:uppercase;padding:1cqw 2cqw;border-radius:.8cqw;border:.2cqw solid #6b4fa0;background:rgba(20,10,36,.8);box-shadow:0 0 2cqw rgba(138,92,255,.3), inset 0 0 1cqw rgba(138,92,255,.2);width:26cqw;text-align:center;transition:all .3s;text-shadow:0 0 1cqw #8a5cff}
 .dcard.pop{transform:scale(1.1)}
+.time-select{display:flex;align-items:center;gap:1cqw;margin-bottom:1cqw;font-family:'Cinzel',serif;font-size:1.5cqw;font-weight:900;color:#e0c8ff;text-shadow:0 0 1cqw #8a5cff}
+.time-select button{border:0;background:none;color:#b794f6;font-size:1.6cqw;cursor:pointer}
+.time-select button:disabled{opacity:.25;cursor:default}
 .bg-easy{color:#6ee7a0;border-color:#6ee7a0;box-shadow:0 0 2cqw rgba(110,231,160,.4), inset 0 0 1cqw rgba(110,231,160,.2);text-shadow:0 0 1cqw #6ee7a0}
 .bg-medium{color:#ffd700;border-color:#ffd700;box-shadow:0 0 2cqw rgba(255,215,0,.4), inset 0 0 1cqw rgba(255,215,0,.2);text-shadow:0 0 1cqw #ffd700}
 .bg-hard{color:#ff6b6b;border-color:#ff6b6b;box-shadow:0 0 2cqw rgba(255,107,107,.4), inset 0 0 1cqw rgba(255,107,107,.2);text-shadow:0 0 1cqw #ff6b6b}
@@ -78,6 +81,11 @@
 <div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
 <div class="ui" id="lobby">
   <div class="tg"><div class="gn" id="mapTitle">HALLOWEEN</div></div>
+  <div class="time-select" aria-label="Map time">
+    <button id="timePrev" type="button" onclick="changeMapTime(-1)" aria-label="Previous time">&lt;</button>
+    <span id="mapTime">NIGHT</span>
+    <button id="timeNext" type="button" onclick="changeMapTime(1)" aria-label="Next time">&gt;</button>
+  </div>
   <div class="dc2">
     <button class="nb" id="prevBtn" onclick="changeDifficulty(-1)">&lt;</button>
     <div class="dcard bg-easy" id="diffCard"><span id="diffIcon">🌱</span><span id="diffName">Easy</span></div>
@@ -116,13 +124,18 @@
 </div><script>
 let isAdmin=localStorage.getItem('zylox_admin')==='true';
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
-function loadBest(m,d){return +localStorage.getItem(bestKey(m,d))||0}
+function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
 const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',class:'bg-medium',icon:'⚡',speed:6},{name:'Hard',class:'bg-hard',icon:'🔥',speed:8},{name:'Extreme',class:'bg-extreme',icon:'☠️',speed:10},{name:'Nightmare',class:'bg-nightmare',icon:'😈',speed:12}];
-const maps=[{name:'Halloween',img:'https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop',avail:true},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false}];
+const maps=[{name:'Halloween',img:'https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop',avail:true,times:['Night']},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false,times:['Day','Night']}];
 if(!localStorage.getItem('zylox_entity'))localStorage.setItem('zylox_entity','Bat');
 let diffIdx=Math.max(0,diffs.findIndex(d=>d.name===localStorage.getItem('zylox_diff'))),mapIdx=0,equipMap=localStorage.getItem('zylox_map')||'Halloween';
-const entityMaps={Bat:['Halloween']};
-function entityFitsMap(map){return (entityMaps[localStorage.getItem('zylox_entity')]||[]).includes(map)}
+const entityModes={Bat:['Night']},entityMaps={Bat:['Halloween']};
+let equipTime=localStorage.getItem('zylox_time')||'Night';
+function currentMap(){return maps.find(m=>m.name===equipMap)||maps[0]}
+function normalizeMapTime(){const times=currentMap().times||['Day','Night'];if(!times.includes(equipTime))equipTime=times[0];localStorage.setItem('zylox_time',equipTime)}
+function entityFitsMap(map,time=equipTime){const m=maps.find(item=>item.name===map),entity=localStorage.getItem('zylox_entity');return !!m&&(m.times||['Day','Night']).includes(time)&&(entityMaps[entity]||[]).includes(map)&&(entityModes[entity]||[]).includes(time)}
+function updateMapTime(){normalizeMapTime();const times=currentMap().times||['Day','Night'],i=times.indexOf(equipTime);document.getElementById('mapTime').textContent=equipTime.toUpperCase();document.getElementById('timePrev').disabled=i===0;document.getElementById('timeNext').disabled=i===times.length-1}
+function changeMapTime(direction){const times=currentMap().times||['Day','Night'],i=times.indexOf(equipTime)+direction;if(i>=0&&i<times.length){equipTime=times[i];updateMapTime()}}
 function closeNotice(){document.getElementById('noticeOverlay').classList.remove('show')}
 function showNotice(title,message,actionLabel,action){
   document.getElementById('noticeTitle').textContent=title;
@@ -130,7 +143,7 @@ function showNotice(title,message,actionLabel,action){
   const button=document.getElementById('noticeAction');button.textContent=actionLabel;button.onclick=action;
   document.getElementById('noticeOverlay').classList.add('show');
 }
-function showEntityNotice(){showNotice('Entity unavailable','This entity is not available for the selected map. Please choose another entity.','Choose Entity',()=>{window.location.href='setting.html?view=entity'})}
+function showEntityNotice(){showNotice('Entity unavailable','This entity cannot be used on the selected map or time. Bat can only be used at Night. Please choose another entity or time.','Choose Entity',()=>{window.location.href='setting.html?view=entity'})}
 if(!maps.some(m=>m.name===equipMap&&m.avail))equipMap='Halloween';
 function updateLobbyBg() {
   const currentMap = maps.find(m => m.name === equipMap);
@@ -138,7 +151,7 @@ function updateLobbyBg() {
     document.getElementById('lobbyBg').style.backgroundImage = `url('${currentMap.img}')`;
   }
 }
-function refreshLobby(){document.getElementById('mapTitle').textContent=equipMap.toUpperCase();document.getElementById('bestScore').textContent=loadBest(equipMap,diffs[diffIdx].name);document.querySelectorAll('.mi').forEach(el=>el.classList.toggle('active',el.dataset.map===equipMap)); updateLobbyBg();}
+function refreshLobby(){document.getElementById('mapTitle').textContent=equipMap.toUpperCase();document.getElementById('bestScore').textContent=loadBest(equipMap,diffs[diffIdx].name);document.querySelectorAll('.mi').forEach(el=>el.classList.toggle('active',el.dataset.map===equipMap)); updateLobbyBg();updateMapTime();}
 function updateDiffUI(){const d=diffs[diffIdx];document.getElementById('diffIcon').textContent=d.icon;document.getElementById('diffName').textContent=d.name;const c=document.getElementById('diffCard');c.className=`dcard ${d.class}`;c.classList.add('pop');setTimeout(()=>c.classList.remove('pop'),200);document.getElementById('prevBtn').classList.toggle('hb',diffIdx===0);document.getElementById('nextBtn').classList.toggle('hb',diffIdx===diffs.length-1);refreshLobby()}
 function changeDifficulty(d){const n=diffIdx+d;if(n>=0&&n<diffs.length){diffIdx=n;updateDiffUI()}}
 function updateMapUI(){const m=maps[mapIdx];document.getElementById('previewBg').style.backgroundImage=`url('${m.img}')`;document.getElementById('previewImg').src=m.img;document.getElementById('previewTitle').textContent=m.name;if(m.name==='Coming Soon'){document.getElementById('btnConfirmMap').style.display='none';document.getElementById('selectedText').style.display='none'}else{const eq=equipMap===m.name;document.getElementById('btnConfirmMap').style.display=eq?'none':'block';document.getElementById('selectedText').style.display=eq?'block':'none'}document.getElementById('prevPreviewBtn').classList.toggle('hb',mapIdx===0);document.getElementById('nextPreviewBtn').classList.toggle('hb',mapIdx===maps.length-1)}
@@ -163,10 +176,13 @@ function submitFeedback(){
     document.getElementById('feedbackText').value='';closeFeedback();
   } else { alert('Please enter a message before submitting!'); }
 }
-function startGame(){if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html'}
+function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html'}
 updateDiffUI();refreshLobby();
-if(!sessionStorage.getItem('zylox_setup_notice_seen')){
-  sessionStorage.setItem('zylox_setup_notice_seen','true');
-  showNotice('Welcome','Please adjust your settings for the best experience.','Open Menu',()=>{window.location.href='setting.html'});
-}
-</script><script src="music.js"></script></body></html>
+document.addEventListener('zylox-account-ready',()=>{
+  if(!sessionStorage.getItem('zylox_tutorial_seen')){
+    sessionStorage.setItem('zylox_tutorial_seen','true');
+    showNotice('Tutorial','Choose your difficulty and map, then press Play. Press Space or tap to fly through the gaps and collect Candy. Visit the Menu to change your settings and entity.','Open Menu',()=>{window.location.href='setting.html'});
+  }
+});
+document.addEventListener('zylox-progress-updated', refreshLobby);
+</script><script src="music.js"></script><script src="account.js"></script></body></html>
