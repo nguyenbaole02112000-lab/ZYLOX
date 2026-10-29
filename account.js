@@ -1,13 +1,29 @@
 (() => {
   let account = null, ready = false, overlay, message, queue = [], syncing = false, serverProgress = { candy: 0, bestScores: {} };
+  const offlineAvailable = window.location.hostname.endsWith('.github.io');
+  const offlineSessionKey = 'zylox_offline_guest_active';
+  const offlineNameKey = 'zylox_offline_guest_name';
+  const offlineCandyPrefix = 'zylox_offline_candy_';
+  const offlineBestPrefix = 'zylox_offline_best_';
+  let offlineMode = false, offlineCandy = 0;
+  const countOfflineCandy = () => Object.keys(localStorage).filter(key => key.startsWith(offlineCandyPrefix)).reduce((total, key) => {
+    const value = Number(localStorage.getItem(key));
+    return total + (Number.isSafeInteger(value) && value > 0 ? value : 0);
+  }, 0);
   const api = async (path, method = 'GET', body) => {
+    if (offlineAvailable) throw new Error('Online accounts are not available on GitHub Pages yet. Select Play as Guest to save progress in this browser, or open http://[::1]:8080/ on this computer to sign in.');
     let response;
     const headers = body === undefined ? {} : { 'Content-Type': 'application/json' };
     if (account && (path.startsWith('/api/progress') || ['/api/account/logout','/api/account/password','/api/account/display-name'].includes(path))) headers['X-Zylox-Account'] = String(account.id);
     try { response = await fetch(path, { method, credentials: 'same-origin', headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store' }); }
     catch (_) { throw new Error('Cannot reach the account server. Start the game server and open the game through its URL.'); }
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || 'Account request failed. Please try again.');
+    if (!response.ok) {
+      if (window.location.hostname.endsWith('.github.io') && (response.status === 404 || response.status === 405)) {
+        throw new Error('Online accounts are not available on GitHub Pages yet. On this computer, open http://[::1]:8080/ to sign in.');
+      }
+      throw new Error(result.error || `Account request failed (HTTP ${response.status}). Please try again.`);
+    }
     return result;
   };
   const pendingPrefix = () => 'zylox_pending_v2_' + account.id + '_';
@@ -32,6 +48,7 @@
   }
   async function refreshProgress() {
     if (!account || !ready) return;
+    if (offlineMode) { renderProgress(); return; }
     const owner = account.id;
     try {
       const result = await api('/api/progress');
@@ -40,8 +57,12 @@
     } catch (_) {}
   }
   const escapeText = text => String(text || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  function getCandy() { return Math.max(0, Number(serverProgress.candy) || 0) + queue.filter(item => item.type === 'candy').reduce((sum, item) => sum + (item.delta || 1), 0); }
+  function getCandy() {
+    if (offlineMode) return offlineCandy;
+    return Math.max(0, Number(serverProgress.candy) || 0) + queue.filter(item => item.type === 'candy').reduce((sum, item) => sum + (item.delta || 1), 0);
+  }
   function getBest(key) {
+    if (offlineMode) return Math.max(0, Number(localStorage.getItem(offlineBestPrefix + key)) || 0);
     const best = { ...(serverProgress.bestScores || {}) };
     queue.filter(item => item.type === 'best').forEach(item => { best[item.key] = Math.max(Number(best[item.key]) || 0, item.value); });
     return Number(best[key]) || 0;
@@ -50,7 +71,7 @@
     document.dispatchEvent(new CustomEvent('zylox-progress-updated'));
   }
   async function syncQueue() {
-    if (!account || syncing || !queue.length) return;
+    if (offlineMode || !account || syncing || !queue.length) return;
     syncing = true;
     const owner = account.id;
     try {
@@ -76,10 +97,20 @@
   }
   function addCandy() {
     if (!ready || !account) return;
+    if (offlineMode) {
+      try { localStorage.setItem(offlineCandyPrefix + newId(), '1'); offlineCandy++; renderProgress(); }
+      catch (_) { alert('Unable to save Candy in this browser. Please free up browser storage.'); }
+      return;
+    }
     enqueue({ type: 'candy', id: newId() }); renderProgress(); syncQueue();
   }
   function saveBest(key, value) {
     if (!ready || !account || !key.startsWith('halloween_best_')) return;
+    if (offlineMode) {
+      try { localStorage.setItem(offlineBestPrefix + key, String(Math.max(getBest(key), Number(value) || 0))); renderProgress(); }
+      catch (_) { alert('Unable to save your score in this browser. Please free up browser storage.'); }
+      return;
+    }
     enqueue({ type: 'best', id: newId(), key, value }); renderProgress(); syncQueue();
   }
   async function activate(user) {
@@ -96,6 +127,30 @@
     if ((oldCandy || oldScores.length) && !localStorage.getItem('zylox_legacy_migration_owner') && !localStorage.getItem('zylox_legacy_skipped_' + account.id)) {
       showMigration(oldCandy, oldScores);
     } else finishActivation();
+  }
+  function activateOffline() {
+    offlineMode = true;
+    offlineCandy = countOfflineCandy();
+    account = { id: 'offline-guest', username: 'Guest (Offline)', displayName: localStorage.getItem(offlineNameKey) || 'Guest', isGuest: true };
+    queue = []; serverProgress = { candy: 0, bestScores: {} };
+    localStorage.setItem(offlineSessionKey, '1');
+    const oldCandy = Number(localStorage.getItem('zylox_candy'));
+    const candy = Number.isSafeInteger(oldCandy) && oldCandy > 0 ? oldCandy : 0;
+    const scores = Object.keys(localStorage).filter(key => /^halloween_best_[a-z0-9_]{1,80}$/.test(key)).map(key => [key, Number(localStorage.getItem(key))]).filter(([, value]) => Number.isSafeInteger(value) && value > 0 && value <= 1000000000);
+    if ((candy || scores.length) && !localStorage.getItem('zylox_offline_legacy_decided')) {
+      overlay.hidden = false;
+      overlay.querySelector('.account-card').innerHTML = `<h2>Previous Progress</h2><p class="account-note">This browser has ${candy} Candy and ${scores.length} saved best score(s). Import them into this browser-only guest? The old data will remain here.</p><p class="account-message" role="status"></p><div class="account-actions"><button type="button" id="importProgress">Import Progress</button><button type="button" id="skipProgress">Keep Separate</button></div>`;
+      message = overlay.querySelector('.account-message');
+      overlay.querySelector('#importProgress').onclick = () => {
+        try {
+          if (candy) localStorage.setItem(offlineCandyPrefix + 'legacy', String(candy));
+          scores.forEach(([key,value]) => localStorage.setItem(offlineBestPrefix + key, String(Math.max(getBest(key),value))));
+          localStorage.setItem('zylox_offline_legacy_decided', 'imported');
+          offlineCandy = countOfflineCandy(); renderProgress(); finishActivation();
+        } catch (_) { setMessage('Unable to import progress. Please free up browser storage.'); }
+      };
+      overlay.querySelector('#skipProgress').onclick = () => { localStorage.setItem('zylox_offline_legacy_decided', 'separate'); finishActivation(); };
+    } else { renderProgress(); finishActivation(); }
   }
   function finishActivation() {
     ready = true; overlay.hidden = true;
@@ -128,10 +183,12 @@
   function showAuth(mode = 'signup') {
     ready = false; overlay.hidden = false;
     const isLogin = mode === 'login';
-    overlay.querySelector('.account-card').innerHTML = `<h2>${isLogin ? 'Log In' : 'Create Account'}</h2><form id="authForm"><label>Username<input name="username" autocomplete="username" required maxlength="32"></label><label>Password<input name="password" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required minlength="8" maxlength="128"></label><button type="submit">${isLogin ? 'Log In' : 'Sign Up'}</button></form><button type="button" id="switchAuth">${isLogin ? 'Create Account' : 'Already have an account? Log In'}</button><button type="button" id="guestAuth">Play as Guest</button><p class="account-note">Guest progress is tied to the IPv6 address seen by the server and can be accessed by others sharing that address.</p><p class="account-message" role="status"></p>`;
+    overlay.querySelector('.account-card').innerHTML = `<h2>${isLogin ? 'Log In' : 'Create Account'}</h2><form id="authForm"><label>Username<input name="username" autocomplete="username" required maxlength="32"></label><label>Password<input name="password" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required minlength="8" maxlength="128"></label><button type="submit">${isLogin ? 'Log In' : 'Sign Up'}</button></form><button type="button" id="switchAuth">${isLogin ? 'Create Account' : 'Already have an account? Log In'}</button><button type="button" id="guestAuth">Play as Guest</button><p class="account-note">${offlineAvailable ? 'Guest progress is saved only in this browser and cannot be shared with other browsers.' : 'Guest progress is tied to the IPv6 address seen by the server and can be accessed by others sharing that address.'}</p><p class="account-message" role="status"></p>`;
     message = overlay.querySelector('.account-message');
+    if (offlineAvailable) setMessage('Online accounts are not available on GitHub Pages yet. Play as Guest or open http://[::1]:8080/ on this computer to sign in.');
     overlay.querySelector('#switchAuth').onclick = () => showAuth(isLogin ? 'signup' : 'login');
     overlay.querySelector('#guestAuth').onclick = async () => {
+      if (offlineAvailable) { activateOffline(); return; }
       setMessage('Connecting...');
       try { const result = await api('/api/account/guest', 'POST', {}); await activate(result.account); }
       catch (error) { setMessage(error.message); }
@@ -147,11 +204,12 @@
   function showAccount() {
     if (!ready || !account) return;
     overlay.hidden = false;
-    overlay.querySelector('.account-card').innerHTML = `<h2>Account</h2><p class="account-note">Signed in as ${escapeText(account.username || account.displayName)}</p><form id="displayForm"><label>Display name<input name="displayName" required maxlength="32" value="${escapeText(account.displayName)}"></label><button>Save Display Name</button></form>${account.isGuest ? '<p class="account-note">Guest accounts do not have a password.</p>' : '<form id="passwordForm"><label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><button>Reset Password</button></form>'}<p id="accountSyncWarning" class="account-note"></p><p class="account-message" role="status"></p><div class="account-actions"><button type="button" id="closeAccount">Back</button><button type="button" id="logoutAccount">Logout</button></div>`;
+    overlay.querySelector('.account-card').innerHTML = `<h2>Account</h2><p class="account-note">Signed in as ${escapeText(account.username || account.displayName)}${offlineMode ? '. Progress is saved only in this browser.' : ''}</p><form id="displayForm"><label>Display name<input name="displayName" required maxlength="32" value="${escapeText(account.displayName)}"></label><button>Save Display Name</button></form>${account.isGuest ? '<p class="account-note">Guest accounts do not have a password.</p>' : '<form id="passwordForm"><label>Current password<input name="currentPassword" type="password" autocomplete="current-password" required></label><label>New password<input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required></label><button>Reset Password</button></form>'}<p id="accountSyncWarning" class="account-note"></p><p class="account-message" role="status"></p><div class="account-actions"><button type="button" id="closeAccount">Back</button><button type="button" id="logoutAccount">Logout</button></div>`;
     message = overlay.querySelector('.account-message');
     overlay.querySelector('#closeAccount').onclick = () => { overlay.hidden = true; };
     overlay.querySelector('#displayForm').onsubmit = async event => {
       event.preventDefault();
+      if (offlineMode) { const value = event.currentTarget.elements.displayName.value.trim(); if (!value) { setMessage('Display name is required.'); return; } account.displayName = value; localStorage.setItem(offlineNameKey, value); setMessage('Display name updated.'); return; }
       try { const result = await api('/api/account/display-name', 'PATCH', { displayName: event.currentTarget.elements.displayName.value.trim() }); account = result.account; setMessage('Display name updated.'); }
       catch (error) { setMessage(error.message); }
     };
@@ -162,6 +220,7 @@
       catch (error) { form.reset(); setMessage(error.message); }
     };
     overlay.querySelector('#logoutAccount').onclick = async () => {
+      if (offlineMode) { localStorage.removeItem(offlineSessionKey); offlineMode = false; account = null; ready = false; queue = []; serverProgress = { candy: 0, bestScores: {} }; showAuth(); return; }
       try {
         if (queue.length) { await syncQueue(); if (queue.length) { setMessage('Progress has not synced. Reconnect before logging out.'); return; } }
         await api('/api/account/logout', 'POST', {});
@@ -180,11 +239,17 @@
   window.addEventListener('online', () => { syncQueue(); refreshProgress(); });
   window.addEventListener('focus', refreshProgress);
   window.addEventListener('storage', event => {
+    if (offlineMode && event.key && (event.key.startsWith(offlineCandyPrefix) || event.key.startsWith(offlineBestPrefix))) { if (event.key.startsWith(offlineCandyPrefix)) offlineCandy = countOfflineCandy(); renderProgress(); return; }
     if (account && event.key && event.key.startsWith(pendingPrefix())) {
       queue = readQueue(); renderProgress(); syncQueue();
       if (event.newValue === null) refreshProgress();
     }
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshProgress(); });
-  api('/api/account/me').then(result => result.account ? activate(result.account) : showAuth()).catch(error => { showAuth(); setMessage(error.message); });
+  if (offlineAvailable) {
+    if (localStorage.getItem(offlineSessionKey) === '1') activateOffline();
+    else showAuth();
+  } else {
+    api('/api/account/me').then(result => result.account ? activate(result.account) : showAuth()).catch(error => { showAuth(); setMessage(error.message); });
+  }
 })();

@@ -10,15 +10,10 @@
 #exitGameBtn::before,#exitGameBtn::after{content:'';position:absolute;width:50%;height:.4cqw;background:#fff;border-radius:1cqw}
 #exitGameBtn::before{transform:rotate(45deg)}#exitGameBtn::after{transform:rotate(-45deg)}
 #milestoneHUD{position:absolute;top:2cqw;left:2cqw;z-index:300;font-family:'Cinzel',serif;font-size:2.2cqw;font-weight:900;letter-spacing:.1em;color:#ff3b3b;text-shadow:0 0 1cqw #ff3b3b,0 0 .5cqw #fff;pointer-events:none;background:rgba(10,6,18,.8);padding:.6cqw 2cqw;border-radius:99cqw;border:.2cqw solid #6b4fa0;box-shadow:0 0 1.5cqw rgba(255,59,59,.4);line-height:1.2}
-@keyframes breathe {0%, 100% { transform: translate(-50%, -50%) scale(1); }50% { transform: translate(-50%, -50%) scale(1.04); }}
-#tutorialUI {position: absolute;top: 50%; left: 50%;transform: translate(-50%, -50%);background: rgba(10,6,18,.85);padding: 3cqw 5cqw;border-radius: 1.5cqw;border:.2cqw solid #6b4fa0;box-shadow:0 0 2cqw rgba(255,59,59,.5);display: flex;flex-direction: column;align-items: center;justify-content: center;pointer-events: none;z-index: 250;animation: breathe 2s ease-in-out infinite;white-space: nowrap;}
-#tutorialUI .title { font-family:'Cinzel',serif;font-size: 4cqw; font-weight: 900; color: #ff3b3b; text-shadow:0 0 1.5cqw #ff3b3b; margin-bottom: 1.5cqw; letter-spacing: .1em;}
-#tutorialUI .desc { font-size: 2cqw; color: #e0c8ff; margin-bottom: 1cqw; text-shadow:0 0 1cqw #8a5cff;}
 </style>
 </head><body><div class="gc">
 <canvas id="gameCanvas"></canvas>
 <div id="milestoneHUD">SCORE: 0</div>
-<div id="tutorialUI"><div class="title">TUTORIAL</div><div class="desc">Press SPACE / Click to fly</div><div class="desc">Endless fun!</div></div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
 </div><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
@@ -44,7 +39,6 @@ const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
 function candyTotal(){return window.ZyloxAccount?.getCandy()||0}
 function addCandy(){window.ZyloxAccount?.addCandy()}
 function makePipe(x,topHeight){return {x,topHeight,scored:false,candy:mapName==='Halloween'&&Math.random()<cfg.candyChance}}
-const tutorialUI=document.getElementById('tutorialUI');
 let isFlapping = false;
 function drawBatWings(x, y) {
   ctx.save();ctx.translate(x + 7, y - 3);ctx.rotate(86 * Math.PI / 180); 
@@ -121,7 +115,7 @@ function resizeCanvas(){
   if(state==='playing'&&pipes.length>0){let lp=pipes[pipes.length-1];while(lp.x<W+PD){const th=getNextPipeTop(lp.topHeight);const np=makePipe(lp.x+PD,th);pipes.push(np);lp=np;}}
 }
 window.addEventListener('resize',resizeCanvas);resizeCanvas();
-function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;tutorialUI.style.display='none';pipes.push(makePipe(W,(H-PG)/2));}
+function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;pipes.push(makePipe(W,(H-PG)/2));}
 function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'){resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='playing'){cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='gameover')resetGame()}
 document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();flap()}});canvas.addEventListener('mousedown',flap);canvas.addEventListener('touchstart',e=>{e.preventDefault();flap()},{passive:false});
 function update(step){

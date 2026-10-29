@@ -178,11 +178,5 @@ function submitFeedback(){
 }
 function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html'}
 updateDiffUI();refreshLobby();
-document.addEventListener('zylox-account-ready',()=>{
-  if(!sessionStorage.getItem('zylox_tutorial_seen')){
-    sessionStorage.setItem('zylox_tutorial_seen','true');
-    showNotice('Tutorial','Choose your difficulty and map, then press Play. Press Space or tap to fly through the gaps and collect Candy. Visit the Menu to change your settings and entity.','Open Menu',()=>{window.location.href='setting.html'});
-  }
-});
 document.addEventListener('zylox-progress-updated', refreshLobby);
 </script><script src="music.js"></script><script src="account.js"></script></body></html>

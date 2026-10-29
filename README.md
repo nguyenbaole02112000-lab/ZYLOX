@@ -8,7 +8,7 @@ Install Node.js 22.13 or newer. In the game folder, run:
 node account-server.js
 ```
 
-Open `http://[::1]:8080/` in a browser. Keep the server running while playing. Opening the HTML file directly or using static GitHub hosting cannot provide accounts or cross-browser progress.
+Open `http://[::1]:8080/` in a browser. Keep the server running while playing. Opening the HTML file directly or using static GitHub hosting cannot provide accounts or cross-browser progress. GitHub Pages supports a separate offline guest whose progress is saved only in the current browser; it is not the IPv6 guest or a server account.
 
 On the current Windows computer, if Node.js is not on your PATH, you can run the bundled runtime from PowerShell:
 
