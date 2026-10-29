@@ -148,6 +148,7 @@ function render(){
   ctx.fillStyle='#ff3b3b';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.fillText(score,W/2,80);ctx.shadowBlur=0;
   ctx.fillStyle='#ffc764';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('Candy: '+candyTotal(),W-24,H-20);
   if(state==='gameover'){
+    ctx.textAlign='center';
     ctx.fillStyle='rgba(10,6,18,.9)';ctx.strokeStyle='#ff3b3b';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(W/2-220,H/2-110,440,220, 15);ctx.fill();ctx.stroke();
     ctx.fillStyle='#ff3b3b';ctx.font='bold 38px Arial';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.fillText('GAME OVER',W/2,H/2-45);ctx.shadowBlur=0;
     ctx.fillStyle='#e0c8ff';ctx.font='bold 24px Arial';ctx.fillText('Score: '+score,W/2,H/2+5);

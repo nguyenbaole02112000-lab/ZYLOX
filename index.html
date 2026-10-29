@@ -176,7 +176,7 @@ function submitFeedback(){
     document.getElementById('feedbackText').value='';closeFeedback();
   } else { alert('Please enter a message before submitting!'); }
 }
-function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html'}
+function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html?v=gameover-fix'}
 updateDiffUI();refreshLobby();
 document.addEventListener('zylox-progress-updated', refreshLobby);
 </script><script src="music.js"></script><script src="account.js?v=9619a19"></script></body></html>
