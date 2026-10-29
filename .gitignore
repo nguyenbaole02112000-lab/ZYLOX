@@ -1,0 +1,17 @@
+*
+!*/
+!.gitignore
+!README
+!README.md
+!README.txt
+!*.html
+!*.css
+!*.js
+!*.mjs
+!*.cjs
+!*.jsx
+!*.ts
+!*.tsx
+node_modules/
+dist/
+build/

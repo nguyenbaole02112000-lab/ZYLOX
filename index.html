@@ -1,0 +1,172 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><title>LOBBY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;background:#000;overflow:hidden;display:flex;justify-content:center;align-items:center;font-family:'Segoe UI',sans-serif}
+.gc{position:relative;width:100vw;height:56.25vw;max-height:100vh;max-width:177.78vh;background:#140a24;overflow:hidden;container-type:size}
+.bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop') center/cover;filter:blur(8px) brightness(.35) hue-rotate(240deg) saturate(1.5);transform:scale(1.1);z-index:1;transition:background-image .3s}
+.ov{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 0%,rgba(10,6,18,.7) 60%,#0a0612 100%);z-index:2}
+.ui{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;pointer-events:none}
+.pb,.bs,.dc2,.brc,.mc,.la{pointer-events:auto}
+.tg{display:flex;flex-direction:column;align-items:center;gap:.2cqw;margin-bottom:3cqw;animation:ft 4s ease-in-out infinite}
+@keyframes ft{0%,100%{transform:translateY(0)}50%{transform:translateY(-1cqw)}}
+.gn{font-family:'Cinzel',serif;font-size:8cqw;font-weight:900;letter-spacing:.1em;text-transform:uppercase;background:linear-gradient(180deg,#fff8e7,#ffd700 50%,#b8860b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 1cqw #f7d51d) drop-shadow(0 .5cqw .5cqw rgba(0,0,0,.8));transform:perspective(50cqw) rotateX(10deg)}
+.dc2{display:flex;align-items:center;justify-content:center;gap:2cqw;margin-bottom:3cqw;width:44cqw;pointer-events:auto}
+.nb{font-size:3cqw;font-weight:900;color:#e0c8ff;background:transparent;border:none;cursor:pointer;text-shadow:0 0 1cqw #8a5cff;transition:transform .1s,opacity .2s;display:flex;align-items:center;justify-content:center;width:3cqw;pointer-events:auto}
+.nb:hover{transform:scale(1.2);color:#fff;text-shadow:0 0 2cqw #b794f6}
+.nb:active{transform:scale(.9)}.nb.hb{opacity:0;pointer-events:none}
+.dcard{display:flex;align-items:center;justify-content:center;gap:1cqw;font-family:'Cinzel',serif;font-size:2.4cqw;font-weight:900;letter-spacing:.1em;color:#e0c8ff;text-transform:uppercase;padding:1cqw 2cqw;border-radius:.8cqw;border:.2cqw solid #6b4fa0;background:rgba(20,10,36,.8);box-shadow:0 0 2cqw rgba(138,92,255,.3), inset 0 0 1cqw rgba(138,92,255,.2);width:26cqw;text-align:center;transition:all .3s;text-shadow:0 0 1cqw #8a5cff}
+.dcard.pop{transform:scale(1.1)}
+.bg-easy{color:#6ee7a0;border-color:#6ee7a0;box-shadow:0 0 2cqw rgba(110,231,160,.4), inset 0 0 1cqw rgba(110,231,160,.2);text-shadow:0 0 1cqw #6ee7a0}
+.bg-medium{color:#ffd700;border-color:#ffd700;box-shadow:0 0 2cqw rgba(255,215,0,.4), inset 0 0 1cqw rgba(255,215,0,.2);text-shadow:0 0 1cqw #ffd700}
+.bg-hard{color:#ff6b6b;border-color:#ff6b6b;box-shadow:0 0 2cqw rgba(255,107,107,.4), inset 0 0 1cqw rgba(255,107,107,.2);text-shadow:0 0 1cqw #ff6b6b}
+.bg-extreme{color:#b794f6;border-color:#b794f6;box-shadow:0 0 2cqw rgba(183,148,246,.4), inset 0 0 1cqw rgba(183,148,246,.2);text-shadow:0 0 1cqw #b794f6}
+.bg-nightmare{color:#fff;border-color:#444;background:#000;box-shadow:0 0 2cqw rgba(255,255,255,.2), inset 0 0 1cqw rgba(255,255,255,.1);text-shadow:0 0 1cqw #fff}
+.bs{font-family:'Cinzel',serif;font-size:2cqw;font-weight:bold;color:#e0c8ff;padding:1cqw 3cqw;background:rgba(10,6,18,.7);border:.2cqw solid #f7d51d;border-radius:99cqw;box-shadow:0 0 2cqw rgba(247,213,29,.4), inset 0 0 1cqw rgba(247,213,29,.2);margin-bottom:3cqw;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:1cqw;min-width:28cqw;text-shadow:0 0 1cqw #f7d51d}
+.bs .num{color:#f7d51d;font-size:1.2em;text-shadow:0 0 1.5cqw #f7d51d}
+.pb{font-family:'Cinzel',serif;padding:1.2cqw 4cqw;font-size:2.5cqw;font-weight:900;letter-spacing:.2em;color:#fff;background:linear-gradient(180deg,#9b59b6,#6b4fa0);border:.25cqw solid #b794f6;border-radius:1.2cqw;cursor:pointer;text-transform:uppercase;box-shadow:0 .5cqw 0 #4a2e7a,0 .8cqw 2cqw rgba(138,92,255,.6);transition:transform .08s,box-shadow .08s;text-shadow:0 0 1cqw #fff,0 .2cqw .4cqw rgba(0,0,0,.8)}
+.pb:hover{filter:brightness(1.2);box-shadow:0 .5cqw 0 #4a2e7a,0 .8cqw 3cqw rgba(138,92,255,1)}
+.pb:active{transform:translateY(.4cqw);box-shadow:0 .1cqw 0 #4a2e7a,0 .4cqw 1cqw rgba(138,92,255,.5)}
+.brc{position:absolute;bottom:6cqw;right:4cqw;display:flex;flex-direction:column;align-items:center;gap:1.5cqw;z-index:10}
+.ms{display:flex;gap:1.5cqw;pointer-events:auto}
+.mi{position:relative;width:16cqw;aspect-ratio:16/9;border-radius:.8cqw;cursor:pointer;overflow:hidden;background:#140a24;border:.3cqw solid #6b4fa0;box-shadow:0 .6cqw 1.5cqw rgba(0,0,0,.8),0 0 1cqw rgba(138,92,255,.3);transition:transform .2s,filter .2s,box-shadow .2s}
+.mi img{width:100%;height:100%;object-fit:cover;display:block;opacity:.7;transition:opacity .2s}
+.mi:hover,.mi.active{transform:scale(1.05) translateY(-.5cqw);filter:brightness(1.2);box-shadow:0 1cqw 2cqw rgba(0,0,0,.9),0 0 2cqw rgba(138,92,255,.8)}
+.mi:hover img,.mi.active img{opacity:1}
+.mi.active::after{content:'✔';position:absolute;bottom:5%;right:5%;background:#f7d51d;color:#000;font-size:1.4cqw;font-weight:bold;padding:.1cqw .4cqw;border-radius:50%;box-shadow:0 0 1cqw #f7d51d}
+.menu-label{font-family:Cinzel,serif;color:#e0c8ff;font-size:1.2cqw;font-weight:900;text-align:center;margin-top:.4cqw;text-shadow:0 0 1cqw #8a5cff}
+.mc{position:absolute;top:2cqw;right:2cqw;z-index:10;cursor:pointer}
+.miw{width:7cqw;height:7cqw;border-radius:50%;background:rgba(10,6,18,.8);border:.2cqw solid #6b4fa0;box-shadow:0 0 1.5cqw rgba(138,92,255,.4);transition:transform .2s,filter .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.miw:hover{transform:scale(1.1);box-shadow:0 0 2cqw rgba(138,92,255,.8);border-color:#b794f6}
+.menu-svg{width:100%;height:100%;display:block}
+.la{position:absolute;top:3cqw;left:3cqw;z-index:11;cursor:pointer;transition:transform .2s}
+.la:hover{transform:scale(1.05);filter:drop-shadow(0 0 1.5cqw rgba(138,92,255,.8))}
+.la img{width:12cqw;height:auto;object-fit:contain;filter:drop-shadow(0 .5cqw 1cqw rgba(0,0,0,.8))}
+.mpo{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4cqw 0;opacity:0;pointer-events:none;transition:opacity .3s}
+.mpo.show{opacity:1;pointer-events:auto}
+.pbg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(10px) brightness(.3);z-index:-1;transition:background-image .3s}
+.ccb{position:absolute;top:3cqw;right:3cqw;width:4.5cqw;height:4.5cqw;background:linear-gradient(180deg,#ff5252,#d32f2f);border:.2cqw solid #b71c1c;border-radius:50%;cursor:pointer;box-shadow:0 .4cqw 0 #b71c1c,0 .6cqw 1cqw rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;transition:transform .1s,filter .1s;z-index:101}
+.ccb:hover{filter:brightness(1.1)}.ccb:active{transform:scale(.9) translateY(.2cqw)}
+.ccb::before,.ccb::after{content:'';position:absolute;width:50%;height:.4cqw;background:#fff;border-radius:1cqw}
+.ccb::before{transform:rotate(45deg)}.ccb::after{transform:rotate(-45deg)}
+.ph{font-family:'Cinzel',serif;font-size:3.5cqw;font-weight:900;color:#f7d51d;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 2cqw #f7d51d}
+.pc{display:flex;align-items:center;justify-content:center;gap:2cqw;width:100%}
+.pic{width:60cqw;aspect-ratio:16/9;border-radius:1cqw;overflow:hidden;border:.4cqw solid #6b4fa0;box-shadow:0 0 3cqw rgba(138,92,255,.6);background:#000;position:relative;transition:transform .2s,opacity .2s}
+.pic img{width:100%;height:100%;object-fit:cover;display:block}
+.pf{display:flex;align-items:center;justify-content:center;height:6cqw;width:100%}
+.pbtn{font-family:'Cinzel',serif;padding:1cqw 4cqw;font-size:2cqw;font-weight:900;color:#fff;border-radius:.8cqw;cursor:pointer;text-transform:uppercase;transition:transform .1s,filter .1s;border:none;letter-spacing:.1em}
+.pbtn:active{transform:scale(.95)}
+.bsec{background:linear-gradient(180deg,#9b59b6,#6b4fa0);border:.2cqw solid #b794f6;box-shadow:0 .4cqw 0 #4a2e7a,0 0 1.5cqw rgba(138,92,255,.6)}
+.bsec:hover{filter:brightness(1.2)}
+.ist{font-family:'Cinzel',serif;font-size:2.5cqw;font-weight:900;color:#f7d51d;text-transform:uppercase;letter-spacing:.1em;display:none;text-shadow:0 0 1.5cqw #f7d51d}
+.fo{position:absolute;inset:0;z-index:150;background:rgba(10,6,18,.85);backdrop-filter:blur(5px);display:flex;justify-content:center;align-items:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.fo.show{opacity:1;pointer-events:auto}
+.notice-text{font-size:1.8cqw;color:#e0c8ff;text-align:center;line-height:1.5;margin-bottom:2cqw}
+.fs{position:relative;background:radial-gradient(ellipse at top,#2a1a4a,#140a24);width:45cqw;max-width:90vw;padding:3cqw;border:.2cqw solid #6b4fa0;border-radius:1cqw;box-shadow:0 0 4cqw rgba(138,92,255,.4);display:flex;flex-direction:column;align-items:center;transform:scale(.9);transition:transform .3s}
+.fo.show .fs{transform:scale(1)}
+.fs .ccb{top:1cqw;right:1cqw;width:3.5cqw;height:3.5cqw}
+.fs h2{font-family:'Cinzel',serif;color:#f7d51d;font-size:2.5cqw;margin-bottom:2cqw;text-transform:uppercase;letter-spacing:.1em;text-shadow:0 0 1cqw #f7d51d}
+.fs textarea{width:100%;height:12cqw;padding:1.5cqw;border-radius:.5cqw;border:.15cqw solid #8a5cff;background:rgba(0,0,0,.4);color:#fff;font-size:1.8cqw;font-family:'Segoe UI',sans-serif;resize:none;outline:none;margin-bottom:2cqw;box-shadow:inset 0 0 1cqw rgba(0,0,0,.5)}
+.fs textarea::placeholder{color:#8a5cff}
+.fa{display:flex;gap:1.5cqw;width:100%;justify-content:center}
+.bsend{font-family:'Cinzel',serif;padding:1cqw 3cqw;font-size:1.8cqw;font-weight:900;color:#fff;background:linear-gradient(180deg,#9b59b6,#6b4fa0);border:.2cqw solid #b794f6;border-radius:.8cqw;cursor:pointer;text-transform:uppercase;box-shadow:0 .4cqw 0 #4a2e7a}
+.bsend:active{transform:translateY(.2cqw)}
+</style></head><body><div class="gc">
+<div class="bg" id="lobbyBg"></div><div class="ov"></div>
+<div class="la" onclick="openFeedback()"><img src="https://uploads.onecompiler.io/4572fw7d6/457e6dv78/lenguyenbao-rmbg.png" alt="Admin"></div>
+<div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
+<div class="ui" id="lobby">
+  <div class="tg"><div class="gn" id="mapTitle">HALLOWEEN</div></div>
+  <div class="dc2">
+    <button class="nb" id="prevBtn" onclick="changeDifficulty(-1)">&lt;</button>
+    <div class="dcard bg-easy" id="diffCard"><span id="diffIcon">🌱</span><span id="diffName">Easy</span></div>
+    <button class="nb" id="nextBtn" onclick="changeDifficulty(1)">&gt;</button>
+  </div>
+  <div class="bs">🏆 Milestone: <span class="num" id="bestScore">0</span></div>
+  <button class="pb" onclick="startGame()">▶ Play</button>
+</div>
+<div class="brc" id="mapSelector"><div class="ms"><div class="mi active" data-map="Halloween" onclick="openMapPreview()"><img src="https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop" alt="Halloween"></div></div></div>
+<div class="mpo" id="mapPreview">
+  <div class="pbg" id="previewBg"></div>
+  <div class="ccb" onclick="closeMapPreview()"></div>
+  <div class="ph" id="previewTitle">Name</div>
+  <div class="pc">
+    <button class="nb" id="prevPreviewBtn" onclick="changePreviewMap(-1)">&lt;</button>
+    <div class="pic"><img id="previewImg" src="" alt="Map"></div>
+    <button class="nb" id="nextPreviewBtn" onclick="changePreviewMap(1)">&gt;</button>
+  </div>
+  <div class="pf"><button class="pbtn bsec" id="btnConfirmMap" onclick="confirmMapSelection()">SELECT</button><span class="ist" id="selectedText">✓ EQUIPPED</span></div>
+</div>
+<div class="fo" id="feedbackOverlay">
+  <div class="fs">
+    <div class="ccb" onclick="closeFeedback()"></div>
+    <h2>📜 Send Feedback</h2>
+    <textarea id="feedbackText" placeholder="Write your message here..."></textarea>
+    <div class="fa"><button class="bsend" onclick="submitFeedback()">SUBMIT</button></div>
+  </div>
+</div>
+<div class="fo" id="noticeOverlay" role="dialog" aria-modal="true" aria-labelledby="noticeTitle">
+  <div class="fs">
+    <h2 id="noticeTitle"></h2>
+    <p class="notice-text" id="noticeText"></p>
+    <div class="fa"><button class="bsend" id="noticeAction"></button><button class="bsend" onclick="closeNotice()">Close</button></div>
+  </div>
+</div>
+</div><script>
+let isAdmin=localStorage.getItem('zylox_admin')==='true';
+function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
+function loadBest(m,d){return +localStorage.getItem(bestKey(m,d))||0}
+const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',class:'bg-medium',icon:'⚡',speed:6},{name:'Hard',class:'bg-hard',icon:'🔥',speed:8},{name:'Extreme',class:'bg-extreme',icon:'☠️',speed:10},{name:'Nightmare',class:'bg-nightmare',icon:'😈',speed:12}];
+const maps=[{name:'Halloween',img:'https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop',avail:true},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false}];
+if(!localStorage.getItem('zylox_entity'))localStorage.setItem('zylox_entity','Bat');
+let diffIdx=Math.max(0,diffs.findIndex(d=>d.name===localStorage.getItem('zylox_diff'))),mapIdx=0,equipMap=localStorage.getItem('zylox_map')||'Halloween';
+const entityMaps={Bat:['Halloween']};
+function entityFitsMap(map){return (entityMaps[localStorage.getItem('zylox_entity')]||[]).includes(map)}
+function closeNotice(){document.getElementById('noticeOverlay').classList.remove('show')}
+function showNotice(title,message,actionLabel,action){
+  document.getElementById('noticeTitle').textContent=title;
+  document.getElementById('noticeText').textContent=message;
+  const button=document.getElementById('noticeAction');button.textContent=actionLabel;button.onclick=action;
+  document.getElementById('noticeOverlay').classList.add('show');
+}
+function showEntityNotice(){showNotice('Entity unavailable','This entity is not available for the selected map. Please choose another entity.','Choose Entity',()=>{window.location.href='setting.html?view=entity'})}
+if(!maps.some(m=>m.name===equipMap&&m.avail))equipMap='Halloween';
+function updateLobbyBg() {
+  const currentMap = maps.find(m => m.name === equipMap);
+  if (currentMap) {
+    document.getElementById('lobbyBg').style.backgroundImage = `url('${currentMap.img}')`;
+  }
+}
+function refreshLobby(){document.getElementById('mapTitle').textContent=equipMap.toUpperCase();document.getElementById('bestScore').textContent=loadBest(equipMap,diffs[diffIdx].name);document.querySelectorAll('.mi').forEach(el=>el.classList.toggle('active',el.dataset.map===equipMap)); updateLobbyBg();}
+function updateDiffUI(){const d=diffs[diffIdx];document.getElementById('diffIcon').textContent=d.icon;document.getElementById('diffName').textContent=d.name;const c=document.getElementById('diffCard');c.className=`dcard ${d.class}`;c.classList.add('pop');setTimeout(()=>c.classList.remove('pop'),200);document.getElementById('prevBtn').classList.toggle('hb',diffIdx===0);document.getElementById('nextBtn').classList.toggle('hb',diffIdx===diffs.length-1);refreshLobby()}
+function changeDifficulty(d){const n=diffIdx+d;if(n>=0&&n<diffs.length){diffIdx=n;updateDiffUI()}}
+function updateMapUI(){const m=maps[mapIdx];document.getElementById('previewBg').style.backgroundImage=`url('${m.img}')`;document.getElementById('previewImg').src=m.img;document.getElementById('previewTitle').textContent=m.name;if(m.name==='Coming Soon'){document.getElementById('btnConfirmMap').style.display='none';document.getElementById('selectedText').style.display='none'}else{const eq=equipMap===m.name;document.getElementById('btnConfirmMap').style.display=eq?'none':'block';document.getElementById('selectedText').style.display=eq?'block':'none'}document.getElementById('prevPreviewBtn').classList.toggle('hb',mapIdx===0);document.getElementById('nextPreviewBtn').classList.toggle('hb',mapIdx===maps.length-1)}
+function openMapPreview(){mapIdx=maps.findIndex(m=>m.name===equipMap);if(mapIdx===-1)mapIdx=0;updateMapUI();document.getElementById('mapPreview').classList.add('show')}
+function closeMapPreview(){document.getElementById('mapPreview').classList.remove('show')}
+function changePreviewMap(d){const n=mapIdx+d;if(n>=0&&n<maps.length){mapIdx=n;const c=document.querySelector('.pic');c.style.transform='scale(.95)';c.style.opacity='.7';setTimeout(()=>{updateMapUI();c.style.transform='scale(1)';c.style.opacity='1'},150)}}
+function confirmMapSelection(){const m=maps[mapIdx];if(!m.avail&&!isAdmin)return;equipMap=m.name;localStorage.setItem('zylox_map',equipMap);updateMapUI();refreshLobby();if(!entityFitsMap(equipMap))showEntityNotice()}
+function openFeedback(){document.getElementById('feedbackOverlay').classList.add('show')}
+function closeFeedback(){document.getElementById('feedbackOverlay').classList.remove('show')}
+function submitFeedback(){
+  const t=document.getElementById('feedbackText').value.trim();
+  if(t){
+    if(t.toLowerCase()==='zylox2010'){
+      isAdmin=true;localStorage.setItem('zylox_admin','true');maps[1].avail=true;alert('Admin access granted.');updateMapUI();
+    } else {
+      if(isAdmin){
+        isAdmin=false;localStorage.removeItem('zylox_admin');maps[1].avail=false;alert('Incorrect code. Admin access removed.');
+        if(equipMap === 'Coming Soon'){equipMap = 'Halloween';localStorage.setItem('zylox_map', equipMap);}
+        refreshLobby();
+      } else { alert('Thank you for your feedback!'); }
+    }
+    document.getElementById('feedbackText').value='';closeFeedback();
+  } else { alert('Please enter a message before submitting!'); }
+}
+function startGame(){if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html'}
+updateDiffUI();refreshLobby();
+if(!sessionStorage.getItem('zylox_setup_notice_seen')){
+  sessionStorage.setItem('zylox_setup_notice_seen','true');
+  showNotice('Welcome','Please adjust your settings for the best experience.','Open Menu',()=>{window.location.href='setting.html'});
+}
+</script><script src="music.js"></script></body></html>
