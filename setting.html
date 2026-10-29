@@ -38,6 +38,19 @@
 .tab:hover .tab-arrow{opacity:1;color:#b794f6;transform:translateX(4px)}
 .perf-view{position:absolute;inset:10px 30px 20px;display:none;flex-direction:column;justify-content:center;align-items:center;animation:fadeIn .3s ease;z-index:2}
 .perf-view.show{display:flex}
+.music-view{justify-content:flex-start;gap:5px;inset:4px 30px 8px}
+.music-list{width:min(100%,480px);flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px}
+.music-list::-webkit-scrollbar{width:4px}.music-list::-webkit-scrollbar-thumb{background:#6b4fa0;border-radius:3px}
+.music-track{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border:1px solid #6b4fa0;border-radius:8px;background:rgba(42,26,74,.6);color:#e0c8ff;font-weight:700;text-align:left;cursor:pointer}
+.music-track:hover{border-color:#b794f6;background:rgba(59,37,98,.8)}
+.music-track.active{border-color:#f7d51d;color:#fff;box-shadow:0 0 10px rgba(247,215,29,.35)}
+.music-track .track-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-track .track-state{color:#f7d51d;font-size:11px;flex-shrink:0}
+.music-add{display:block;text-align:center;border-style:dashed;cursor:pointer}
+.music-status{color:#b794f6;font-size:12px;text-align:center;min-height:1em}
+.music-controls{display:flex;justify-content:center;gap:8px}
+.music-controls .perf-back{margin:0}
+.music-controls .perf-back:disabled{opacity:.45;cursor:default}
 @keyframes fadeIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 .perf-title{font-size:clamp(12px,2vw,20px);font-weight:900;color:#f7d51d;text-transform:uppercase;letter-spacing:.15em;text-shadow:0 0 15px rgba(247,213,29,.8);margin:6px 0}
 .perf-options{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
@@ -119,16 +132,16 @@
       <button class="perf-back" onclick="closeAllViews()">← Back</button>
     </div>
     
-    <div class="perf-view" id="musicView">
+    <div class="perf-view music-view" id="musicView">
       <div class="perf-title">Soundtrack</div>
-      <div id="musicTrack" style="color:#e0c8ff;font-size:18px;margin-bottom:12px">None</div>
-      <div id="musicStatus" style="color:#b794f6;font-size:13px;margin-bottom:12px" aria-live="polite"></div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-        <label class="perf-back" style="margin:0">Choose MP3<input id="musicFile" type="file" accept="audio/mpeg,.mp3" style="display:none" onchange="selectMusic(this)"></label>
-        <button class="perf-back" style="margin:0" id="musicPlay" onclick="toggleMusic()">Play</button>
-        <button class="perf-back" style="margin:0" onclick="clearMusic()">None</button>
+      <div class="music-list" aria-label="Soundtrack list">
+        <button class="music-track" id="musicNone" onclick="chooseMusic('none')" aria-pressed="true"><span class="track-name">None</span><span class="track-state">Selected</span></button>
+        <div id="musicTracks" style="display:flex;flex-direction:column;gap:5px"></div>
+        <button class="music-track music-add" type="button" onclick="document.getElementById('musicFile').click()">+ Add MP3</button>
+        <input id="musicFile" type="file" accept="audio/mpeg,.mp3" style="display:none" onchange="selectMusic(this)">
       </div>
-      <button class="perf-back" onclick="closeAllViews()">← Back</button>
+      <div class="music-status" id="musicStatus" aria-live="polite"></div>
+      <div class="music-controls"><button class="perf-back" id="musicPlay" onclick="toggleMusic()">Play</button><button class="perf-back" onclick="closeAllViews()">← Back</button></div>
     </div>
     <div class="entity-view" id="entityView">
       <div class="e-top">
@@ -210,19 +223,32 @@
     const music=window.ZyloxMusic;
     if(!music)return;
     const state=music.getState();
-    document.getElementById('musicTrack').textContent=state.name||'None';
     document.getElementById('musicStatus').textContent=state.status||'';
     const button=document.getElementById('musicPlay');
     button.disabled=!state.name;
     button.textContent=state.playing?'Pause':'Play';
+    const selected=state.selectedId||'none';
+    const none=document.getElementById('musicNone');
+    none.classList.toggle('active',selected==='none');
+    none.setAttribute('aria-pressed',String(selected==='none'));
+    none.querySelector('.track-state').textContent=selected==='none'?'Selected':'';
+    const list=document.getElementById('musicTracks');
+    list.replaceChildren();
+    (state.tracks||[]).forEach(track=>{
+      const item=document.createElement('button');item.type='button';item.className='music-track';
+      const active=selected===track.id;item.classList.toggle('active',active);item.setAttribute('aria-pressed',String(active));
+      const name=document.createElement('span');name.className='track-name';name.textContent=track.name;
+      const marker=document.createElement('span');marker.className='track-state';marker.textContent=active?'Selected':'';
+      item.append(name,marker);item.addEventListener('click',()=>chooseMusic(track.id));list.appendChild(item);
+    });
   }
+  function chooseMusic(id){window.ZyloxMusic.selectTrack(id);}
   async function selectMusic(input){
     if(input.files[0])await window.ZyloxMusic.select(input.files[0]);
     input.value='';
     updateMusicView();
   }
   function toggleMusic(){window.ZyloxMusic.toggle();}
-  function clearMusic(){window.ZyloxMusic.clear();}
   if(!localStorage.getItem('zylox_entity'))localStorage.setItem('zylox_entity','Bat');
   const allowedRenderFPS = [0,30,45,60,90,120], allowedPhysicsFPS = [60,90,120];
   const savedRenderFPS = localStorage.getItem('zylox_fps');
