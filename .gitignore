@@ -12,7 +12,10 @@
 !*.jsx
 !*.ts
 !*.tsx
+!*.sql
 node_modules/
 dist/
 build/
+.tools/
 !assets/music/amen-break.mp3
+!assets/bao-brand.png

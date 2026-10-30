@@ -10,12 +10,14 @@
 #exitGameBtn::before,#exitGameBtn::after{content:'';position:absolute;width:50%;height:.4cqw;background:#fff;border-radius:1cqw}
 #exitGameBtn::before{transform:rotate(45deg)}#exitGameBtn::after{transform:rotate(-45deg)}
 #milestoneHUD{position:absolute;top:2cqw;left:2cqw;z-index:300;font-family:'Cinzel',serif;font-size:2.2cqw;font-weight:900;letter-spacing:.1em;color:#ff3b3b;text-shadow:0 0 1cqw #ff3b3b,0 0 .5cqw #fff;pointer-events:none;background:rgba(10,6,18,.8);padding:.6cqw 2cqw;border-radius:99cqw;border:.2cqw solid #6b4fa0;box-shadow:0 0 1.5cqw rgba(255,59,59,.4);line-height:1.2}
+#gameHint{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:250;max-width:90%;padding:12px 20px;border:1px solid #8a5cff;border-radius:12px;background:rgba(20,10,36,.88);box-shadow:0 0 25px rgba(138,92,255,.35);color:#e0c8ff;text-align:center;font-size:clamp(13px,2vw,20px);line-height:1.5;pointer-events:none}#gameHint strong{display:block;color:#f7d51d;font-family:Cinzel,serif;letter-spacing:.08em}#gameHint[hidden]{display:none}
 </style>
 </head><body><div class="gc">
 <canvas id="gameCanvas"></canvas>
+<div id="gameHint" role="status"><strong>Ready to fly?</strong>Press Space or ↑, or click / tap to start and flap.</div>
 <div id="milestoneHUD">SCORE: 0</div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
-</div><script>
+</div><script src="game-replay.js"></script><script src="entity-art.js"></script><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
 function saveBest(m,d,v){window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
@@ -34,11 +36,13 @@ const PG = cfg.gap;
 const milestoneEl=document.getElementById('milestoneHUD');
 milestoneEl.textContent='SCORE: '+best;
 const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),BH=540,PW=60,PD=480,GRAV=.7,FLP=-10;
-let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0;
+let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0,gameplayRandom=Math.random,effectRandom=Math.random,onlineRun=null;
+let entity=localStorage.getItem('zylox_entity')||'Bat',doubleNotice=0;
 const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
-function candyTotal(){return window.ZyloxAccount?.getCandy()||0}
-function addCandy(){window.ZyloxAccount?.addCandy()}
-function makePipe(x,topHeight){return {x,topHeight,scored:false,candy:mapName==='Halloween'&&Math.random()<cfg.candyChance}}
+function candyTotal(){const saved=window.ZyloxAccount?.getCandy()||0;return saved+(onlineRun&&!onlineRun.admin?Math.max(0,onlineRun.collectedCandy-onlineRun.syncedCandy):0)}
+function addCandy(){if(onlineRun?.admin)return;if(onlineRun)onlineRun.collectedCandy++;window.ZyloxAccount?.addCandy()}
+window.BaoRunSynced=run=>{if(onlineRun?.id===run.id&&Number.isSafeInteger(run.collectedCandy))onlineRun.syncedCandy=Math.max(onlineRun.syncedCandy,run.collectedCandy)};
+function makePipe(x,topHeight){return {x,topHeight,scored:false,candy:mapName==='Halloween'&&gameplayRandom()<cfg.candyChance}}
 let isFlapping = false;
 function drawBatWings(x, y) {
   ctx.save();ctx.translate(x + 7, y - 3);ctx.rotate(86 * Math.PI / 180); 
@@ -58,6 +62,7 @@ function drawBatBody(x, y) {
   ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(5.8,-4.5,.8,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(4,5);ctx.lineTo(6,9);ctx.lineTo(8,5);ctx.closePath();ctx.fill();ctx.restore();
   }
 function drawCreature() {
+  if(entity==='Ghost'||entity==='Witch'){ctx.save();ctx.translate(cr.x,cr.y);ctx.rotate(cr.rot);ctx.scale(.8,.8);window.BaoEntityArt[entity.toLowerCase()](ctx,Math.sin(frame/25)*3);ctx.restore();return}
   ctx.save();
   ctx.translate(cr.x, cr.y);
   ctx.rotate(cr.rot);
@@ -91,6 +96,7 @@ function drawPipe(p){
   ctx.stroke();
   ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
   ctx.fillText('R.I.P', p.x + PW/2, p.topHeight+PG + 60);
+  if(entity==='Ghost'){ctx.save();ctx.translate(p.x+PW/2,p.topHeight+PG/2+60);ctx.strokeStyle='#ffb04c';ctx.shadowColor='#ff7d25';ctx.shadowBlur=14;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.moveTo(0,-8);ctx.lineTo(0,8);ctx.stroke();ctx.restore()}
 }
 function drawBackground(){
   const sg = ctx.createLinearGradient(0, 0, 0, H);sg.addColorStop(0, '#05020a');sg.addColorStop(.6, '#140a24');sg.addColorStop(1, '#1a0a2e');ctx.fillStyle = sg;ctx.fillRect(0, 0, W, H);
@@ -106,17 +112,40 @@ function getNextPipeTop(prevTop) {
     sMin = Math.max(sMin, minTop); sMax = Math.min(sMax, maxTop);
     if (sMin > sMax) { sMin = 60; sMax = H - PG - 60; }
   }
-  return Math.random() * (sMax - sMin) + sMin;
+  return gameplayRandom() * (sMax - sMin) + sMin;
 }
 function resizeCanvas(){
   const vw=canvas.clientWidth,vh=canvas.clientHeight;scl=vh/BH;const dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.width=Math.round(vw*dpr);canvas.height=Math.round(vh*dpr);W=vw/scl;ctx.setTransform(scl*dpr,0,0,scl*dpr,0,0);H=BH;
-  if(cr.y>H-100||cr.y<0)cr.y=H/2;
+  if(state==='playing'&&onlineRun&&!onlineRun.admin){
+    if(W<160||W>3840||onlineRun.replay.resizes.length>=200){window.BaoRuns?.save(onlineRun);onlineRun=null;state='ready';window.BaoRuns?.notice('Screen size changed too often. Start a new game to keep your progress safe.')}
+    else onlineRun.replay.resizes.push([onlineRun.replay.ticks,W]);
+  }
+  if(state!=='playing'&&(cr.y>H-100||cr.y<0))cr.y=H/2;
   if(state==='playing'&&pipes.length>0){let lp=pipes[pipes.length-1];while(lp.x<W+PD){const th=getNextPipeTop(lp.topHeight);const np=makePipe(lp.x+PD,th);pipes.push(np);lp=np;}}
 }
 window.addEventListener('resize',resizeCanvas);resizeCanvas();
 function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;pipes.push(makePipe(W,(H-PG)/2));}
-function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'){resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='playing'){cr.vy=FLP;window.ZyloxSound?.play('flap')}else if(state==='gameover')resetGame()}
+async function beginGame(){
+  if(state==='starting')return;
+  onlineRun=null;gameplayRandom=Math.random;
+  if(window.ZyloxAccount?.isOnline){
+    state='starting';const width=W,requestStarted=performance.now();
+    try{
+      const challenge=await window.BaoCloud.rpc('start_game',{map_key:mapName,difficulty_key:diffName,entity_key:localStorage.getItem('zylox_entity')||'Bat',fps:physicsFPS,width_value:width});
+      if(W!==width)throw Error('Screen size changed. Please start again.');
+      const cutoff=Date.parse(challenge.quest_cutoff_at),serverNow=Date.parse(challenge.server_time),started=Date.parse(challenge.started_at);
+      if(!challenge.admin_mode&&(!Number.isFinite(cutoff)||!Number.isFinite(serverNow)||!Number.isFinite(started)))throw Error('Game server update required. Please try again later.');
+      const safeRemaining=cutoff-serverNow-(performance.now()-requestStarted)-1500;
+      if(!challenge.admin_mode&&safeRemaining<=0)throw Error('Daily quests are resetting. Please try again shortly.');
+      onlineRun={id:challenge.id,owner:window.ZyloxAccount.account.id,admin:challenge.admin_mode,collectedCandy:0,syncedCandy:0,
+        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{ticks:0,flaps:[],resizes:[]}};
+      gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);window.BaoRuns.notice('');
+    }catch(error){state='ready';window.BaoRuns?.notice(error.message||'Unable to start an online game.');return}
+  }
+  resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap');
+}
+function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'||state==='gameover')beginGame();else if(state==='playing'){if(onlineRun&&!onlineRun.admin&&onlineRun.replay.flaps.at(-1)!==onlineRun.replay.ticks)onlineRun.replay.flaps.push(onlineRun.replay.ticks);cr.vy=FLP;window.ZyloxSound?.play('flap')}}
 document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();flap()}});canvas.addEventListener('mousedown',flap);canvas.addEventListener('touchstart',e=>{e.preventDefault();flap()},{passive:false});
 function update(step){
   frame+=step;parts=parts.filter(p=>{p.x+=p.vx*step;p.y+=p.vy*step+.15*step*(step-1)/2;p.vy+=.15*step;p.life-=step;return p.life>0});
@@ -126,14 +155,16 @@ function update(step){
   if(pipes.length===0 || pipes[pipes.length-1].x<=W-PD){const prevTop = pipes.length>0 ? pipes[pipes.length-1].topHeight : undefined;pipes.push(makePipe(W,getNextPipeTop(prevTop)));}
   for(const p of pipes){
     p.x-=cSpd*step;
-    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
-    if(cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
-    if(state==='playing'&&p.candy&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.candy=false;addCandy();window.ZyloxSound?.play('candy');}
+    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best&&!onlineRun?.admin){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
+    if(entity!=='Ghost'&&cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
+    if(entity==='Ghost'&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2+60))<cr.r+12)gameOver();
+    if(state==='playing'&&p.candy&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.candy=false;addCandy();if(entity==='Witch'&&effectRandom()<.5){addCandy();addCandy();doubleNotice=90}window.ZyloxSound?.play('candy');}
   }
   pipes=pipes.filter(p=>p.x+PW>0);
-  if(cr.y+cr.r>H-60||cr.y-cr.r<0)gameOver();
+  if(cr.y+cr.r>H-60||cr.y-cr.r<0){if(onlineRun?.admin){cr.y=Math.max(cr.r,Math.min(H-60-cr.r,cr.y));cr.vy=0}else gameOver()}
+  if(doubleNotice>0)doubleNotice-=step;
 }
-function gameOver(){if(state==='gameover')return;state='gameover';window.ZyloxSound?.play('gameover');for(let i=0;i<20;i++)parts.push({x:cr.x,y:cr.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8-2,life:40,color:['#ff3b3b','#e0c8ff','#b794f6'][i%3]});}
+function gameOver(){if(state==='gameover'||onlineRun?.admin)return;state='gameover';window.ZyloxSound?.play('gameover');for(let i=0;i<20;i++)parts.push({x:cr.x,y:cr.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8-2,life:40,color:['#ff3b3b','#e0c8ff','#b794f6'][i%3]});}
 function drawCandy(p){
   const x=p.x+PW/2,y=p.topHeight+PG/2;
   ctx.save();ctx.translate(x,y);ctx.shadowBlur=12;ctx.shadowColor='#ff9d31';
@@ -143,10 +174,12 @@ function drawCandy(p){
   ctx.strokeStyle='#fff1c2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-4,-7);ctx.lineTo(3,7);ctx.moveTo(2,-8);ctx.lineTo(8,4);ctx.stroke();ctx.restore();
 }
 function render(){
+  document.getElementById('gameHint').hidden=state!=='ready';
   drawBackground();pipes.forEach(p=>{drawPipe(p);if(p.candy)drawCandy(p)});if(state!=='gameover')drawCreature();
   parts.forEach(p=>{ctx.globalAlpha=p.life/40;ctx.fillStyle=p.color;ctx.shadowBlur = 10;ctx.shadowColor = p.color;ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;ctx.shadowBlur=0;
   ctx.fillStyle='#ff3b3b';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.fillText(score,W/2,80);ctx.shadowBlur=0;
   ctx.fillStyle='#ffc764';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('Candy: '+candyTotal(),W-24,H-20);
+  if(doubleNotice>0){ctx.textAlign='center';ctx.fillStyle='#ffe287';ctx.fillText('Candy ×3!',cr.x,cr.y-38)}
   if(state==='gameover'){
     ctx.textAlign='center';
     ctx.fillStyle='rgba(10,6,18,.9)';ctx.strokeStyle='#ff3b3b';ctx.lineWidth=4;ctx.beginPath();ctx.roundRect(W/2-220,H/2-110,440,220, 15);ctx.fill();ctx.stroke();
@@ -170,10 +203,16 @@ document.querySelector('.gc').appendChild(fpsCounterEl);
 document.addEventListener('keydown', e => {if(e.code === 'F3'){e.preventDefault();showFPSCounter = !showFPSCounter;localStorage.setItem('zylox_showfps', showFPSCounter);fpsCounterEl.style.display = showFPSCounter ? 'block' : 'none';}});
 function updateFPSCounter(dt){if(!showFPSCounter || dt <= 0) return;fpsHistory.push(dt);if(fpsHistory.length > 30) fpsHistory.shift();const avgFPS = Math.round(1000 * fpsHistory.length / fpsHistory.reduce((a,b) => a + b, 0));fpsCounterEl.textContent = `FPS: ${avgFPS} | Logic: ${physicsFPS}`;fpsCounterEl.style.color = avgFPS >= 55 ? '#0f0' : avgFPS >= 35 ? '#ff0' : '#f00';}
 let lastTimestamp = performance.now(), accumulator = 0, lastRenderTime = 0, previousRenderTime = 0, flapTimer = 0;
+function endRunAtReset(){
+  if(state!=='playing'||!onlineRun||onlineRun.admin||(performance.now()<onlineRun.deadline&&onlineRun.replay.ticks<onlineRun.maxTicks))return;
+  const timeLimit=onlineRun.replay.ticks>=physicsFPS*3600;
+  window.BaoRuns?.save(onlineRun);onlineRun=null;state='ready';window.BaoRuns?.notice(timeLimit?'This game reached its time limit. Start a new game.':'Daily quests reset soon. Start a new game after the reset.');
+}
 function gameLoop(timestamp){
   const deltaTime = Math.min(timestamp - lastTimestamp, 250);lastTimestamp = timestamp;accumulator += deltaTime;
   flapTimer += deltaTime;if (flapTimer >= 200) {isFlapping = !isFlapping; flapTimer = 0;}
-  while(accumulator + 1e-7 >= PHYSICS_INTERVAL){update(PHYSICS_STEP);accumulator -= PHYSICS_INTERVAL;}
+  endRunAtReset();
+  while(accumulator + 1e-7 >= PHYSICS_INTERVAL){endRunAtReset();const wasPlaying=state==='playing';update(PHYSICS_STEP);if(wasPlaying&&onlineRun&&!onlineRun.admin){onlineRun.replay.ticks++;if(state==='gameover'||onlineRun.replay.ticks%(physicsFPS*5)===0)window.BaoRuns?.save(onlineRun)}accumulator -= PHYSICS_INTERVAL;}
   if(RENDER_INTERVAL === 0 || timestamp - lastRenderTime + 1e-7 >= RENDER_INTERVAL){
     render();if(previousRenderTime)updateFPSCounter(timestamp - previousRenderTime);previousRenderTime = timestamp;
     lastRenderTime = RENDER_INTERVAL === 0 ? timestamp : lastRenderTime + Math.floor((timestamp - lastRenderTime + 1e-7) / RENDER_INTERVAL) * RENDER_INTERVAL;
@@ -181,6 +220,8 @@ function gameLoop(timestamp){
   requestAnimationFrame(gameLoop);
 }
 requestAnimationFrame(gameLoop);
-function exitToLobby(){window.location.href='index.html'}
+function exitToLobby(){if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun);window.location.href='index.html'}
+window.addEventListener('pagehide',()=>{if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='SCORE: '+best});
-</script><script src="music.js"></script><script src="account.js?v=9619a19"></script></body></html>
+</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=online-1"></script><script src="online-runs.js"></script></body></html>

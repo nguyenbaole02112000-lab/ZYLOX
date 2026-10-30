@@ -1,15 +1,28 @@
 (() => {
   let account = null, ready = false, overlay, message, queue = [], syncing = false, serverProgress = { candy: 0, bestScores: {} };
-  const offlineAvailable = window.location.hostname.endsWith('.github.io');
+  const localPreviewHosts = ['localhost','127.0.0.1','::1','[::1]'];
+  const onLocalhost = localPreviewHosts.includes(window.location.hostname);
+  if (onLocalhost && new URLSearchParams(window.location.search).get('auth') === 'cloud') sessionStorage.setItem('baofantasy_cloud_preview','1');
+  const cloudPreview = onLocalhost && sessionStorage.getItem('baofantasy_cloud_preview') === '1';
+  const offlineAvailable = window.location.hostname.endsWith('.github.io') || cloudPreview;
   const offlineSessionKey = 'zylox_offline_guest_active';
   const offlineNameKey = 'zylox_offline_guest_name';
   const offlineCandyPrefix = 'zylox_offline_candy_';
+  const offlineWitchKey = 'baofantasy_offline_witch_owned';
   const offlineBestPrefix = 'zylox_offline_best_';
-  let offlineMode = false, offlineCandy = 0;
-  const countOfflineCandy = () => Object.keys(localStorage).filter(key => key.startsWith(offlineCandyPrefix)).reduce((total, key) => {
+  const cloud = offlineAvailable ? window.BaoCloud : null;
+  let offlineMode = false, cloudMode = false, offlineCandy = 0;
+  const countOfflineCandy = () => Math.max(0,Object.keys(localStorage).filter(key => key.startsWith(offlineCandyPrefix)).reduce((total, key) => {
     const value = Number(localStorage.getItem(key));
     return total + (Number.isSafeInteger(value) && value > 0 ? value : 0);
-  }, 0);
+  }, 0) - (localStorage.getItem(offlineWitchKey)==='1' ? 200 : 0));
+  function purchaseGuestWitch() {
+    if(!offlineMode||!account)throw new Error('Guest account required');
+    if(localStorage.getItem(offlineWitchKey)==='1')return;
+    if(countOfflineCandy()<200)throw new Error('Not enough Candy');
+    localStorage.setItem(offlineWitchKey,'1');
+    offlineCandy=countOfflineCandy();renderProgress();
+  }
   const api = async (path, method = 'GET', body) => {
     if (offlineAvailable) throw new Error('Online accounts are not available on GitHub Pages yet. Select Play as Guest to save progress in this browser, or open http://[::1]:8080/ on this computer to sign in.');
     let response;
@@ -51,14 +64,15 @@
     if (offlineMode) { renderProgress(); return; }
     const owner = account.id;
     try {
+      if(cloudMode){const progress=await cloud.getProgress();if(account?.id===owner){serverProgress=progress;renderProgress();return true}return false}
       const result = await api('/api/progress');
       if (!account || account.id !== owner) return;
       mergeProgress(result.progress); queue = readQueue(); renderProgress(); syncQueue();
-    } catch (_) {}
+    } catch (_) { return false; }
   }
   const escapeText = text => String(text || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function getCandy() {
-    if (offlineMode) return offlineCandy;
+    if (offlineMode) return countOfflineCandy();
     return Math.max(0, Number(serverProgress.candy) || 0) + queue.filter(item => item.type === 'candy').reduce((sum, item) => sum + (item.delta || 1), 0);
   }
   function getBest(key) {
@@ -71,7 +85,7 @@
     document.dispatchEvent(new CustomEvent('zylox-progress-updated'));
   }
   async function syncQueue() {
-    if (offlineMode || !account || syncing || !queue.length) return;
+    if (offlineMode || cloudMode || !account || syncing || !queue.length) return;
     syncing = true;
     const owner = account.id;
     try {
@@ -102,6 +116,7 @@
       catch (_) { alert('Unable to save Candy in this browser. Please free up browser storage.'); }
       return;
     }
+    if(cloudMode)return;
     enqueue({ type: 'candy', id: newId() }); renderProgress(); syncQueue();
   }
   function saveBest(key, value) {
@@ -111,7 +126,14 @@
       catch (_) { alert('Unable to save your score in this browser. Please free up browser storage.'); }
       return;
     }
+    if(cloudMode)return;
     enqueue({ type: 'best', id: newId(), key, value }); renderProgress(); syncQueue();
+  }
+  async function activateCloud(user) {
+    ready=false;offlineMode=false;cloudMode=true;account=user;queue=[];
+    serverProgress=await cloud.getProgress();
+    localStorage.removeItem(offlineSessionKey);
+    renderProgress();finishActivation();
   }
   async function activate(user) {
     ready = false;
@@ -129,7 +151,7 @@
     } else finishActivation();
   }
   function activateOffline() {
-    offlineMode = true;
+    offlineMode = true;cloudMode=false;
     offlineCandy = countOfflineCandy();
     account = { id: 'offline-guest', username: 'Guest (Offline)', displayName: localStorage.getItem(offlineNameKey) || 'Guest', isGuest: true };
     queue = []; serverProgress = { candy: 0, bestScores: {} };
@@ -179,13 +201,17 @@
       finishActivation();
     };
   }
-  function setMessage(text) { message.textContent = text || ''; }
+  function setMessage(text) {
+    message.textContent = text === '{}' ? 'The server did not respond. Please try again.' : (text || '');
+  }
   function showAuth(mode = 'signup') {
     ready = false; overlay.hidden = false;
     const isLogin = mode === 'login';
-    overlay.querySelector('.account-card').innerHTML = `<h2>${isLogin ? 'Log In' : 'Create Account'}</h2><form id="authForm"><label>Username<input name="username" autocomplete="username" required maxlength="32"></label><label>Password<input name="password" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required minlength="8" maxlength="128"></label><button type="submit">${isLogin ? 'Log In' : 'Sign Up'}</button></form><button type="button" id="switchAuth">${isLogin ? 'Create Account' : 'Already have an account? Log In'}</button><button type="button" id="guestAuth">Play as Guest</button><p class="account-note">${offlineAvailable ? 'Guest progress is saved only in this browser and cannot be shared with other browsers.' : 'Guest progress is tied to the IPv6 address seen by the server and can be accessed by others sharing that address.'}</p><p class="account-message" role="status"></p>`;
+    const usernameField=(!cloud||!isLogin)?`<label>Username<input name="username" autocomplete="username" required minlength="3" maxlength="${cloud?'24':'32'}" pattern="[A-Za-z0-9_]+"></label>`:'';
+    const emailField=cloud?'<label>Email<input name="email" type="email" autocomplete="email" required></label>':'';
+    overlay.querySelector('.account-card').innerHTML = `<h2>${isLogin ? 'Log In' : 'Create Account'}</h2><form id="authForm">${usernameField}${emailField}<label>Password<input name="password" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required minlength="8" maxlength="128"></label><button type="submit">${isLogin ? 'Log In' : 'Sign Up'}</button></form><button type="button" id="switchAuth">${isLogin ? 'Create Account' : 'Already have an account? Log In'}</button><button type="button" id="guestAuth">Play as Guest</button><p class="account-note">${offlineAvailable ? 'Guest progress is saved only in this browser and cannot be shared with other browsers.' : 'Guest progress is tied to the IPv6 address seen by the server and can be accessed by others sharing that address.'}</p><p class="account-message" role="status"></p>`;
     message = overlay.querySelector('.account-message');
-    if (offlineAvailable) setMessage('Online accounts are not available on GitHub Pages yet. Play as Guest or open http://[::1]:8080/ on this computer to sign in.');
+    if (offlineAvailable && !cloud) setMessage('Online accounts are unavailable. You can still play as Guest.');
     overlay.querySelector('#switchAuth').onclick = () => showAuth(isLogin ? 'signup' : 'login');
     overlay.querySelector('#guestAuth').onclick = async () => {
       if (offlineAvailable) { activateOffline(); return; }
@@ -195,9 +221,19 @@
     };
     overlay.querySelector('#authForm').onsubmit = async event => {
       event.preventDefault();
-      const form = event.currentTarget, username = form.elements.username.value.trim(), password = form.elements.password.value;
+      const form = event.currentTarget, username = form.elements.username?.value.trim()||'', password = form.elements.password.value;
       setMessage('Connecting...');
-      try { const result = await api(isLogin ? '/api/account/login' : '/api/account/signup', 'POST', { username, password }); form.reset(); await activate(result.account); }
+      try {
+        if(cloud){
+          const email=form.elements.email.value.trim();
+          if(isLogin)await cloud.login(email,password);
+          else {
+            const result=await cloud.signup(username,email,password);
+            if(!result.session){form.reset();setMessage('Check your email to confirm your account, then log in.');return}
+          }
+          form.reset();await activateCloud(await cloud.profile());
+        } else {const result=await api(isLogin ? '/api/account/login' : '/api/account/signup', 'POST', { username, password });form.reset();await activate(result.account)}
+      }
       catch (error) { form.elements.password.value = ''; setMessage(error.message); }
     };
   }
@@ -210,17 +246,20 @@
     overlay.querySelector('#displayForm').onsubmit = async event => {
       event.preventDefault();
       if (offlineMode) { const value = event.currentTarget.elements.displayName.value.trim(); if (!value) { setMessage('Display name is required.'); return; } account.displayName = value; localStorage.setItem(offlineNameKey, value); setMessage('Display name updated.'); return; }
+      if(cloudMode){try{account=await cloud.changeDisplayName(account.id,event.currentTarget.elements.displayName.value.trim());setMessage('Display name updated.')}catch(error){setMessage(error.message)}return}
       try { const result = await api('/api/account/display-name', 'PATCH', { displayName: event.currentTarget.elements.displayName.value.trim() }); account = result.account; setMessage('Display name updated.'); }
       catch (error) { setMessage(error.message); }
     };
     const passwordForm = overlay.querySelector('#passwordForm');
     if (passwordForm) passwordForm.onsubmit = async event => {
       event.preventDefault(); const form = event.currentTarget;
+      if(cloudMode){try{await cloud.changePassword(account.email,form.elements.currentPassword.value,form.elements.newPassword.value);form.reset();setMessage('Password updated.')}catch(error){form.reset();setMessage(error.message)}return}
       try { await api('/api/account/password', 'POST', { currentPassword: form.elements.currentPassword.value, newPassword: form.elements.newPassword.value }); form.reset(); setMessage('Password updated.'); }
       catch (error) { form.reset(); setMessage(error.message); }
     };
     overlay.querySelector('#logoutAccount').onclick = async () => {
       if (offlineMode) { localStorage.removeItem(offlineSessionKey); offlineMode = false; account = null; ready = false; queue = []; serverProgress = { candy: 0, bestScores: {} }; showAuth(); return; }
+      if(cloudMode){try{await cloud.logout();cloudMode=false;account=null;ready=false;queue=[];serverProgress={candy:0,bestScores:{}};showAuth()}catch(error){setMessage(error.message)}return}
       try {
         if (queue.length) { await syncQueue(); if (queue.length) { setMessage('Progress has not synced. Reconnect before logging out.'); return; } }
         await api('/api/account/logout', 'POST', {});
@@ -229,7 +268,7 @@
       } catch (error) { setMessage(error.message); }
     };
   }
-  window.ZyloxAccount = { get ready() { return ready; }, get account() { return account; }, showAccount, addCandy, saveBest, getCandy, getBest };
+  window.ZyloxAccount = { get ready() { return ready; }, get account() { return account; }, get isOnline(){return cloudMode}, get isOfflineGuest(){return offlineMode}, guestOwnsWitch(){return offlineMode&&localStorage.getItem(offlineWitchKey)==='1'}, purchaseGuestWitch, showAccount, addCandy, saveBest, getCandy, getBest, getCoin(){return cloudMode?Number(serverProgress.coin)||0:0}, refresh:refreshProgress };
   const style = document.createElement('style');
   style.textContent = `.account-overlay{position:fixed;inset:0;z-index:99999;background:rgba(10,6,18,.96);display:flex;align-items:center;justify-content:center;color:#e0c8ff;font-family:'Segoe UI',sans-serif}.account-overlay[hidden]{display:none}.account-card{width:min(90vw,420px);max-height:90vh;overflow:auto;padding:22px;border:2px solid #6b4fa0;border-radius:14px;background:#1b1032;box-shadow:0 0 30px #6b4fa0}.account-card h2{text-align:center;color:#f7d51d;font-family:Cinzel,serif;margin:0 0 14px}.account-card form{display:grid;gap:8px;margin:10px 0}.account-card label{display:grid;gap:4px;font-weight:600;font-size:14px}.account-card input{padding:8px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:white;font:inherit}.account-card button{padding:8px 12px;border:1px solid #b794f6;border-radius:7px;background:#6b4fa0;color:#fff;cursor:pointer;font-weight:bold;margin:3px}.account-card>button{width:100%;margin:3px 0}.account-note,.account-message{font-size:12px;line-height:1.35;color:#d9c8ee}.account-message{color:#ffcd7a;min-height:1em}.account-actions{display:flex;justify-content:space-between}`;
   document.head.appendChild(style);
@@ -246,7 +285,9 @@
     }
   });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshProgress(); });
-  if (offlineAvailable) {
+  if (offlineAvailable && cloud) {
+    cloud.profile().then(user=>user?activateCloud(user):localStorage.getItem(offlineSessionKey)==='1'?activateOffline():showAuth()).catch(error=>{showAuth();setMessage(error.message)});
+  } else if (offlineAvailable) {
     if (localStorage.getItem(offlineSessionKey) === '1') activateOffline();
     else showAuth();
   } else {

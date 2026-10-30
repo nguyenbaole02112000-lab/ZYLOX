@@ -77,7 +77,7 @@
 .bsend:active{transform:translateY(.2cqw)}
 </style></head><body><div class="gc">
 <div class="bg" id="lobbyBg"></div><div class="ov"></div>
-<div class="la" onclick="openFeedback()"><img src="https://uploads.onecompiler.io/4572fw7d6/457e6dv78/lenguyenbao-rmbg.png" alt="Admin"></div>
+<div class="la" onclick="openFeedback()"><img src="assets/bao-brand.png" alt="Lê Nguyễn Bảo"></div>
 <div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
 <div class="ui" id="lobby">
   <div class="tg"><div class="gn" id="mapTitle">HALLOWEEN</div></div>
@@ -122,14 +122,13 @@
   </div>
 </div>
 </div><script>
-let isAdmin=localStorage.getItem('zylox_admin')==='true';
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
 const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',class:'bg-medium',icon:'⚡',speed:6},{name:'Hard',class:'bg-hard',icon:'🔥',speed:8},{name:'Extreme',class:'bg-extreme',icon:'☠️',speed:10},{name:'Nightmare',class:'bg-nightmare',icon:'😈',speed:12}];
 const maps=[{name:'Halloween',img:'https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop',avail:true,times:['Night']},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false,times:['Day','Night']}];
 if(!localStorage.getItem('zylox_entity'))localStorage.setItem('zylox_entity','Bat');
 let diffIdx=Math.max(0,diffs.findIndex(d=>d.name===localStorage.getItem('zylox_diff'))),mapIdx=0,equipMap=localStorage.getItem('zylox_map')||'Halloween';
-const entityModes={Bat:['Night']},entityMaps={Bat:['Halloween']};
+const entityModes={Bat:['Night'],Witch:['Day','Night'],Ghost:['Night']},entityMaps={Bat:['Halloween'],Witch:['Halloween'],Ghost:['Halloween']};
 let equipTime=localStorage.getItem('zylox_time')||'Night';
 function currentMap(){return maps.find(m=>m.name===equipMap)||maps[0]}
 function normalizeMapTime(){const times=currentMap().times||['Day','Night'];if(!times.includes(equipTime))equipTime=times[0];localStorage.setItem('zylox_time',equipTime)}
@@ -158,25 +157,17 @@ function updateMapUI(){const m=maps[mapIdx];document.getElementById('previewBg')
 function openMapPreview(){mapIdx=maps.findIndex(m=>m.name===equipMap);if(mapIdx===-1)mapIdx=0;updateMapUI();document.getElementById('mapPreview').classList.add('show')}
 function closeMapPreview(){document.getElementById('mapPreview').classList.remove('show')}
 function changePreviewMap(d){const n=mapIdx+d;if(n>=0&&n<maps.length){mapIdx=n;const c=document.querySelector('.pic');c.style.transform='scale(.95)';c.style.opacity='.7';setTimeout(()=>{updateMapUI();c.style.transform='scale(1)';c.style.opacity='1'},150)}}
-function confirmMapSelection(){const m=maps[mapIdx];if(!m.avail&&!isAdmin)return;equipMap=m.name;localStorage.setItem('zylox_map',equipMap);updateMapUI();refreshLobby();if(!entityFitsMap(equipMap))showEntityNotice()}
+function confirmMapSelection(){const m=maps[mapIdx];if(!m.avail)return;equipMap=m.name;localStorage.setItem('zylox_map',equipMap);updateMapUI();refreshLobby();if(!entityFitsMap(equipMap))showEntityNotice()}
 function openFeedback(){document.getElementById('feedbackOverlay').classList.add('show')}
 function closeFeedback(){document.getElementById('feedbackOverlay').classList.remove('show')}
 function submitFeedback(){
   const t=document.getElementById('feedbackText').value.trim();
   if(t){
-    if(t.toLowerCase()==='zylox2010'){
-      isAdmin=true;localStorage.setItem('zylox_admin','true');maps[1].avail=true;alert('Admin access granted.');updateMapUI();
-    } else {
-      if(isAdmin){
-        isAdmin=false;localStorage.removeItem('zylox_admin');maps[1].avail=false;alert('Incorrect code. Admin access removed.');
-        if(equipMap === 'Coming Soon'){equipMap = 'Halloween';localStorage.setItem('zylox_map', equipMap);}
-        refreshLobby();
-      } else { alert('Thank you for your feedback!'); }
-    }
+    alert('Thank you for your feedback!');
     document.getElementById('feedbackText').value='';closeFeedback();
   } else { alert('Please enter a message before submitting!'); }
 }
 function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html?v=gameover-fix'}
 updateDiffUI();refreshLobby();
 document.addEventListener('zylox-progress-updated', refreshLobby);
-</script><script src="music.js"></script><script src="account.js?v=9619a19"></script></body></html>
+</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=online-1"></script><script src="admin.js"></script><script src="online-runs.js"></script><script src="online-ui.js"></script></body></html>

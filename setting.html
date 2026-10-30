@@ -38,11 +38,18 @@
 .tab:hover .tab-arrow{opacity:1;color:#b794f6;transform:translateX(4px)}
 .perf-view{position:absolute;inset:10px 30px 20px;display:none;flex-direction:column;justify-content:center;align-items:center;animation:fadeIn .3s ease;z-index:2}
 .perf-view.show{display:flex}
-.audio-view{gap:8px}
-.volume-row{display:grid;grid-template-columns:110px minmax(100px,220px) 45px;align-items:center;gap:10px;color:#e0c8ff;font-size:14px;font-weight:700}
+.setting-view{inset:4px 25px 8px;justify-content:flex-start;align-items:stretch;gap:8px;min-height:0}
+.setting-list{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 6px}
+.setting-list::-webkit-scrollbar{width:4px}.setting-list::-webkit-scrollbar-thumb{background:#6b4fa0;border-radius:3px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid rgba(138,92,255,.35);border-radius:9px;background:rgba(42,26,74,.5);color:#e0c8ff;font-size:14px;font-weight:700}
+.setting-row select{min-width:120px;padding:7px 10px;border:1px solid #8a5cff;border-radius:7px;background:#1b1032;color:#fff;font:inherit;cursor:pointer}
+.setting-section{padding:5px 2px 0;color:#f7d51d;font:900 13px Cinzel,serif;letter-spacing:.12em;text-transform:uppercase}
+.setting-row.volume-row{display:grid;grid-template-columns:minmax(70px,1fr) minmax(80px,2fr) 45px}
 .volume-row input{width:100%;accent-color:#b794f6}
 .volume-row output{text-align:right;color:#f7d51d}
-.audio-view .perf-back{margin-top:5px}
+.setting-account{width:100%;text-align:left;cursor:pointer;font:inherit}.setting-account:hover{border-color:#b794f6;background:rgba(59,37,98,.8)}
+.setting-footer{display:flex;justify-content:center;flex-shrink:0}.setting-footer .perf-back{margin:0}
+.inventory-view{inset:4px 25px 8px;align-items:stretch;justify-content:flex-start;gap:8px}.inventory-list{flex:1;min-height:0;overflow:auto;padding:4px}.inventory-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #6b4fa0;border-radius:9px;background:rgba(42,26,74,.6);color:#e0c8ff;font-weight:700}.inventory-view .perf-back{align-self:center;margin:0}
 .music-view{justify-content:flex-start;gap:5px;inset:4px 30px 8px}
 .music-list{width:min(100%,480px);flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px}
 .music-list::-webkit-scrollbar{width:4px}.music-list::-webkit-scrollbar-thumb{background:#6b4fa0;border-radius:3px}
@@ -83,7 +90,7 @@
 .e-map-title,.e-passive-title{font-size:12px;font-weight:bold;color:#f7d51d;text-align:center;margin-bottom:5px;font-family:'Cinzel',serif}
 .e-map-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .e-map-item{height:38px;background:url('https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=200&auto=format&fit=crop') center/cover;border:2px solid #6b4fa0;border-radius:6px;position:relative;cursor:pointer;flex-shrink:0}
-.e-map-item::after{content:'HALLOWEEN · NIGHT';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:10px;font-weight:900;color:#fff;text-shadow:0 0 5px #000;background:rgba(0,0,0,0.7);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.e-map-item::after{content:attr(data-label);position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:10px;font-weight:900;color:#fff;text-shadow:0 0 5px #000;background:rgba(0,0,0,0.7);padding:1px 6px;border-radius:4px;white-space:nowrap}
 .e-passive-content{flex:1;display:flex;justify-content:center;align-items:center;text-align:center;padding:5px;background:rgba(0,0,0,0.6);border:1px dashed rgba(138,92,255,0.5);border-radius:6px;font-size:14px;font-weight:bold;color:#b794f6;text-shadow:0 0 5px rgba(138,92,255,0.5)}
 .e-bottom{flex:1;display:flex;flex-direction:column;position:relative;min-height:0}
 .e-filter-header{display:flex;align-items:center;margin-bottom:8px;gap:10px}
@@ -98,11 +105,13 @@
 .e-char-list{flex:1;min-height:0;display:flex;flex-wrap:wrap;align-content:flex-start;gap:12px;overflow-x:hidden;overflow-y:auto;background:rgba(0,0,0,.6);border:1px solid rgba(138,92,255,.3);border-radius:8px;padding:12px}
 .e-char-list::-webkit-scrollbar{width:4px}
 .e-char-list::-webkit-scrollbar-thumb{background:#6b4fa0;border-radius:3px}
-.e-char-slot{width:35px;height:35px;background:rgba(42,26,74,.8);border:2px solid #6b4fa0;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;justify-content:center;align-items:center;flex-shrink:0;overflow:hidden}
+.e-char-slot{position:relative;width:45px;height:45px;background:rgba(42,26,74,.8);border:2px solid #6b4fa0;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;justify-content:center;align-items:center;flex-shrink:0;overflow:hidden}
+.e-char-slot.common{background:#565a61}.e-char-slot.epic{background:#69368f}.e-char-slot.mythical{background:#943b42}.e-char-slot .lock-mark{position:absolute;right:0;bottom:0;font-size:12px;line-height:1}
+.entity-rarity{text-align:center;font-size:11px;color:#e0c8ff;font-weight:bold}.e-equip-btn:disabled{opacity:.7;cursor:not-allowed;transform:none}
 .e-char-slot:hover{border-color:#f7d51d;box-shadow:0 0 10px #f7d51d;transform:scale(1.1)}
-.e-char-slot.active{border-color:#f7d51d;box-shadow:0 0 10px #f7d51d,inset 0 0 10px rgba(247,213,29,.5);background:rgba(247,213,29,.2)}
+.e-char-slot.active{border-color:#f7d51d;box-shadow:0 0 10px #f7d51d,inset 0 0 10px rgba(247,213,29,.5)}
 .e-char-slot.hidden{display:none}
-#batIconCanvas{width:100%;height:100%}
+.e-char-slot canvas{width:100%;height:100%}
 .settings::after{content:'';position:absolute;inset:-2px;border-radius:20px;padding:2px;background:linear-gradient(135deg,#8a5cff,transparent 40%,transparent 60%,#b794f6);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.6;pointer-events:none;animation:borderGlow 3s ease-in-out infinite}
 @keyframes borderGlow{0%,100%{opacity:.3}50%{opacity:.8}}
 </style></head><body>
@@ -118,38 +127,22 @@
       <div class="tab" onclick="openPerf()"><div class="tab-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div><div class="tab-name">Setting</div><div class="tab-arrow">▸</div></div>
     </div>
     
-    <div class="perf-view" id="perfView">
-      <div class="perf-title">Physics FPS</div>
-      <div class="perf-options" aria-label="Physics FPS">
-        <button class="perf-btn" data-physics="60" onclick="setPhysicsFPS(60)">60</button>
-        <button class="perf-btn" data-physics="90" onclick="setPhysicsFPS(90)">90</button>
-        <button class="perf-btn" data-physics="120" onclick="setPhysicsFPS(120)">120</button>
+    <div class="perf-view setting-view" id="perfView">
+      <div class="setting-list">
+        <div class="setting-section">Performance</div>
+        <label class="setting-row"><span>Physics FPS</span><select id="physicsFPS" onchange="setPhysicsFPS(Number(this.value))"><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option></select></label>
+        <label class="setting-row"><span>Render FPS</span><select id="renderFPS" onchange="setFPS(Number(this.value))"><option value="30">30 FPS</option><option value="45">45 FPS</option><option value="60">60 FPS</option><option value="90">90 FPS</option><option value="120">120 FPS</option><option value="0">Unlimited</option></select></label>
+        <div class="setting-section">Audio</div>
+        <label class="setting-row volume-row"><span>Music</span><input type="range" min="0" max="100" step="1" id="volumeMusic" oninput="changeVolume('music',this.value)"><output id="volumeMusicValue"></output></label>
+        <label class="setting-row volume-row"><span>UI</span><input type="range" min="0" max="100" step="1" id="volumeUi" oninput="changeVolume('ui',this.value)"><output id="volumeUiValue"></output></label>
+        <label class="setting-row volume-row"><span>Gameplay</span><input type="range" min="0" max="100" step="1" id="volumeGame" oninput="changeVolume('game',this.value)"><output id="volumeGameValue"></output></label>
+        <button type="button" class="setting-row setting-account" onclick="window.ZyloxAccount.showAccount()"><span>Account</span><span aria-hidden="true">▸</span></button>
       </div>
-      <div class="perf-title">Render FPS</div>
-      <div class="perf-options" aria-label="Render FPS">
-        <button class="perf-btn" data-fps="30" onclick="setFPS(30)">30</button>
-        <button class="perf-btn" data-fps="45" onclick="setFPS(45)">45</button>
-        <button class="perf-btn" data-fps="60" onclick="setFPS(60)">60</button>
-        <button class="perf-btn" data-fps="90" onclick="setFPS(90)">90</button>
-        <button class="perf-btn" data-fps="120" onclick="setFPS(120)">120</button>
-        <button class="perf-btn" data-fps="0" onclick="setFPS(0)">Unlimited</button>
-      </div>
-      <div class="perf-options"><button class="perf-back" onclick="openAudio()">Audio</button><button class="perf-back" onclick="window.ZyloxAccount.showAccount()">Account</button><button class="perf-back" onclick="closeAllViews()">← Back</button></div>
-    </div>
-    <div class="perf-view audio-view" id="audioView">
-      <div class="perf-title">Volume</div>
-      <label class="volume-row"><span>Music</span><input type="range" min="0" max="100" step="1" id="volumeMusic" oninput="changeVolume('music',this.value)"><output id="volumeMusicValue"></output></label>
-      <label class="volume-row"><span>UI</span><input type="range" min="0" max="100" step="1" id="volumeUi" oninput="changeVolume('ui',this.value)"><output id="volumeUiValue"></output></label>
-      <label class="volume-row"><span>Gameplay</span><input type="range" min="0" max="100" step="1" id="volumeGame" oninput="changeVolume('game',this.value)"><output id="volumeGameValue"></output></label>
-      <button class="perf-back" onclick="openPerf()">← Back</button>
+      <div class="setting-footer"><button class="perf-back" onclick="closeAllViews()">← Back</button></div>
     </div>
     
-    <div class="perf-view" id="inventoryView">
-      <div class="perf-title">Inventory</div>
-      <div class="e-panel" style="min-width:180px;align-items:center;gap:10px;color:#e0c8ff;font-size:18px">
-        <span style="font-size:32px" aria-hidden="true">&#127852;</span>
-        <span>Candy: <strong id="inventoryCandy">0</strong></span>
-      </div>
+    <div class="perf-view inventory-view" id="inventoryView">
+      <div class="inventory-list"><div class="inventory-item"><span>🍬 Candy</span><strong id="inventoryCandy">0</strong></div></div>
       <button class="perf-back" onclick="closeAllViews()">&#8592; Back</button>
     </div>
     <div class="perf-view music-view" id="musicView">
@@ -167,13 +160,14 @@
       <div class="e-top">
         <div class="e-panel e-col-map">
           <div class="e-map-title">Available Maps</div>
-          <div class="e-map-list"><div class="e-map-item"></div></div>
+          <div class="e-map-list"><div class="e-map-item" data-label="HALLOWEEN · NIGHT"></div></div>
         </div>
         <div class="e-col-model-wrap">
           <div class="e-col-model">
             <canvas id="batModelCanvas" width="400" height="400"></canvas>
             <div class="e-model-name">Bat</div>
           </div>
+          <div class="entity-rarity" id="entityRarity">Common · Unlocked</div>
           <button class="e-equip-btn" id="equipBtn" onclick="equipEntity()">Equip</button>
         </div>
         <div class="e-panel e-col-passive">
@@ -193,9 +187,11 @@
           </div>
         </div>
         <div class="e-char-list">
-          <div class="e-char-slot active" title="Bat" data-maps="Halloween">
+          <div class="e-char-slot common active" title="Bat" data-maps="Halloween" data-entity="Bat" role="button" tabindex="0">
             <canvas id="batIconCanvas" width="100" height="100"></canvas>
           </div>
+          <div class="e-char-slot epic" title="Witch — Locked" data-maps="Halloween" data-entity="Witch" role="button" tabindex="0"><canvas id="witchIconCanvas" width="100" height="100"></canvas><span class="lock-mark" aria-label="Locked">🔒</span></div>
+          <div class="e-char-slot mythical" title="Ghost — Locked" data-maps="Halloween" data-entity="Ghost" role="button" tabindex="0"><canvas id="ghostIconCanvas" width="100" height="100"></canvas><span class="lock-mark" aria-label="Locked">🔒</span></div>
         </div>
       </div>
       <button class="perf-back" onclick="closeAllViews()" style="margin-top:2px;align-self:center">← Back</button>
@@ -210,7 +206,6 @@
   const settingsBox = document.getElementById('settingsBox');
   function closeAllViews() {
     perfView.classList.remove('show');
-    document.getElementById('audioView').classList.remove('show');
     entityView.classList.remove('show');
     document.getElementById('musicView').classList.remove('show');
     document.getElementById('inventoryView').classList.remove('show');
@@ -224,13 +219,6 @@
     mainTitle.textContent = '⚜ Setting ⚜';
     settingsBox.classList.add('entity-mode');
     perfView.classList.add('show');
-  }
-  function openAudio() {
-    closeAllViews();
-    tabList.style.display = 'none';
-    mainTitle.textContent = '⚜ Setting ⚜';
-    settingsBox.classList.add('entity-mode');
-    document.getElementById('audioView').classList.add('show');
     ['music','ui','game'].forEach(channel => updateVolumeControl(channel));
   }
   function updateVolumeControl(channel) {
@@ -307,8 +295,8 @@
   function setFPS(fps){ if(!allowedRenderFPS.includes(fps))return; selectedFPS = fps; localStorage.setItem('zylox_fps', fps); updateFPSButtons(); }
   function setPhysicsFPS(fps){ if(!allowedPhysicsFPS.includes(fps))return; selectedPhysicsFPS = fps; localStorage.setItem('zylox_physics_fps', fps); updateFPSButtons(); }
   function updateFPSButtons(){
-    document.querySelectorAll('[data-fps]').forEach(btn => btn.classList.toggle('active', +btn.dataset.fps === selectedFPS));
-    document.querySelectorAll('[data-physics]').forEach(btn => btn.classList.toggle('active', +btn.dataset.physics === selectedPhysicsFPS));
+    document.getElementById('renderFPS').value = String(selectedFPS);
+    document.getElementById('physicsFPS').value = String(selectedPhysicsFPS);
   }
   updateFPSButtons();
   const equipBtn = document.getElementById('equipBtn');
@@ -381,4 +369,4 @@
   drawBatWings(batIconCtx, 0, 0);
   batIconCtx.restore();
 document.addEventListener('zylox-progress-updated',()=>{document.getElementById('inventoryCandy').textContent=window.ZyloxAccount?.getCandy()||0});
-</script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="account.js?v=9619a19"></script></body></html>
+</script><script src="entity-art.js"></script><script src="entities-preview.js"></script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=online-1"></script><script src="admin.js"></script><script src="online-runs.js"></script><script src="online-ui.js"></script></body></html>
