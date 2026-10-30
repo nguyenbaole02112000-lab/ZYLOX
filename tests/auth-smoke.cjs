@@ -75,7 +75,7 @@ window.BaoCloud={
   await page.getByText('Shop',{exact:true}).click();
   const reverse=page.locator('#shopView .online-row').filter({hasText:'2 Coin'});
   await reverse.getByRole('spinbutton',{name:'Candy amount to exchange for Coin'}).fill('12');
-  await reverse.getByRole('button',{name:'Exchange'}).click();
+  await reverse.getByRole('button',{name:'Exchange',exact:true}).click();
   await page.waitForFunction(()=>window.ZyloxAccount.getCoin()===24&&window.ZyloxAccount.getCandy()===38);
   await page.reload();await page.waitForFunction(()=>window.ZyloxAccount.ready);
   assert.equal(await page.evaluate(()=>window.ZyloxAccount.getCoin()),24);
@@ -83,7 +83,7 @@ window.BaoCloud={
   await page.getByText('Shop',{exact:true}).click();
   const forward=page.locator('#shopView .online-row').filter({hasText:'5 Candy'});
   await forward.getByRole('spinbutton',{name:'Quantity for 5 Candy exchange'}).fill('2');
-  await forward.getByRole('button',{name:'Exchange'}).click();
+  await forward.getByRole('button',{name:'Exchange',exact:true}).click();
   await page.waitForFunction(()=>window.ZyloxAccount.getCoin()===4&&window.ZyloxAccount.getCandy()===48);
   assert.deepEqual(errors,[]);console.log('Mock auth smoke passed: signup, reload, logout, login and progress');
  }finally{await browser.close()}

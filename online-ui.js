@@ -20,7 +20,7 @@
     .online-row strong,.online-row small{display:block}.online-row small{color:#b8a8d6;margin-top:3px}.online-row progress{width:100%;height:7px;accent-color:#f7d51d}.online-reward{color:#ffe287;font-size:12px;margin-bottom:4px}.online-status{text-align:center;min-height:1em;font-size:12px;color:#e0c8ff}
     .online-reset{font-size:12px;color:#cbb3eb}.coin-pop{animation:coinPop .6s ease}@keyframes coinPop{50%{transform:scale(1.25);color:#fff}}
     .shop-coin{position:absolute;top:0;right:0;padding:5px 10px;border:1px solid #d6aa42;border-radius:99px;color:#ffe287;background:rgba(10,6,18,.8);font:bold 13px Cinzel,serif;white-space:nowrap}
-    .shop-purchase{display:flex;align-items:center;gap:6px}.shop-quantity{display:flex;align-items:center;gap:4px;color:#cbb3eb;font-size:12px}.shop-quantity input{width:52px;padding:5px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:#fff;font:inherit}.shop-quantity input:disabled{opacity:.55}
+    .shop-purchase{display:flex;align-items:center;gap:6px}.shop-quantity{display:flex;align-items:center;gap:4px;color:#cbb3eb;font-size:12px}.shop-quantity-stack{display:flex;flex-direction:column;align-items:stretch;gap:2px}.shop-quantity input{width:62px;padding:5px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:#fff;font:inherit}.shop-quantity input:disabled{opacity:.55}.shop-quantity-shortcut{padding:2px 4px;border:1px solid #6b4fa0;border-radius:5px;background:#382258;color:#e0c8ff;font-size:10px;font-weight:bold;cursor:pointer}.shop-quantity-shortcut:disabled{opacity:.45;cursor:not-allowed}
     .quest-layout{display:flex;flex:1;min-height:0;gap:8px}.quest-layout .online-list{flex:1}.quest-filter{display:flex;flex-direction:column;gap:5px;min-width:92px}.quest-filter .online-tab{padding:6px;text-align:left}.quest-filter-label{font-size:11px;color:#bda9dc;text-transform:uppercase;letter-spacing:.08em}
     .special-quest{display:flex;flex-direction:column;gap:6px}.special-title{border:0;background:transparent;color:#e0c8ff;font-weight:800;text-align:left;cursor:pointer}.special-child{padding:8px;border-top:1px solid rgba(183,148,246,.25);color:#d3c5ea;font-size:12px}.special-check{color:#74e3a4;font-weight:bold}.special-claimed{opacity:.55}
     @media(max-width:600px){.leaderboard{width:70cqw;font-size:10px}.leaderboard h2{font-size:12px}.leaderboard-row{grid-template-columns:25px minmax(0,1fr) 35px}.leaderboard-preview{width:28cqw;font-size:9px}.leaderboard-preview p{font-size:8px}.leaderboard-preview-list .leaderboard-row{grid-template-columns:18px minmax(0,1fr) 22px}.leaderboard-open{font-size:9px}.coin-balance{font-size:10px}.online-view{inset:2px 12px 5px;gap:3px}.online-row{padding:5px}.online-action,.online-tab{padding:4px 8px}.online-status,.online-reset{font-size:10px}.shop-coin{font-size:10px;padding:3px 7px}}
@@ -30,6 +30,14 @@
   const elem=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e};
   const action=(text,fn)=>{const b=elem('button','online-action',text);b.type='button';b.addEventListener('click',fn);return b};
   const message=error=>error?.message||'Unable to load data. Please try again.';
+  function quantityControl(input,maxValue){
+    const wrapper=elem('div','shop-quantity'),stack=elem('div','shop-quantity-stack');
+    const setValue=value=>{input.value=String(value);input.dispatchEvent(new Event('input',{bubbles:true}))};
+    const maximum=action('Max',()=>setValue(Math.max(0,Math.floor(maxValue())))),minimum=action('Min',()=>setValue(1));
+    maximum.className=minimum.className='shop-quantity-shortcut';maximum.setAttribute('aria-label',`Max ${input.getAttribute('aria-label')}`);minimum.setAttribute('aria-label',`Min ${input.getAttribute('aria-label')}`);
+    const setLocked=locked=>{input.disabled=maximum.disabled=minimum.disabled=locked};setLocked(input.disabled);
+    stack.append(maximum,input,minimum);wrapper.append(elem('span','','Qty'),stack);return {element:wrapper,setLocked};
+  }
 
   if(document.getElementById('lobby')){
     const container=document.querySelector('.gc');
@@ -135,8 +143,9 @@
           const row=elem('div','online-row'),details=elem('div');details.append(elem('strong','',`🍬 ${item.candy_amount} Candy`),elem('small','',`🪙 ${item.coin_price} Coin · ${Math.max(0,item.daily_limit-item.purchased)} / ${item.daily_limit} remaining today`));
           const key=`baofantasy_bulk_pending_${window.ZyloxAccount.account.id}_${item.id}`;
           let pending=null;try{pending=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
-          const group=elem('div','shop-purchase'),label=elem('label','shop-quantity','Qty');
-          const quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,item.daily_limit-item.purchased));quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label',`Quantity for ${item.candy_amount} Candy exchange`);label.appendChild(quantity);
+          const group=elem('div','shop-purchase');
+          const quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,item.daily_limit-item.purchased));quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label',`Quantity for ${item.candy_amount} Candy exchange`);
+          const control=quantityControl(quantity,()=>Math.min(Math.max(0,item.daily_limit-item.purchased),Math.floor(Number(data.coin)/item.coin_price)));
           const total=elem('small');const updateTotal=()=>{const n=quantity.valueAsNumber;total.textContent=Number.isInteger(n)&&n>0?`Total: ${n*item.coin_price} Coin → ${n*item.candy_amount} Candy`:''};quantity.addEventListener('input',updateTotal);updateTotal();details.appendChild(total);
           const button=action('Exchange',async()=>{
             button.disabled=true;ui.status.textContent='Processing...';
@@ -145,17 +154,18 @@
               if(!Number.isInteger(count)||count<1||count>item.daily_limit-item.purchased||count*item.coin_price>Number(data.coin)){ui.status.textContent='Enter a quantity within your Coins and the daily limit.';button.disabled=false;return}
               if(guest){try{window.ZyloxAccount.exchangeGuestCoins(count);await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}catch(error){ui.status.textContent=message(error);button.disabled=false}return}
               if(!crypto.randomUUID){ui.status.textContent='Secure random IDs are unavailable.';button.disabled=false;return}
-              pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));quantity.disabled=true;
+              pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));control.setLocked(true);
             }
             try{const result=await cloud.rpc('exchange_candy_bulk',{item_key:item.id,quantity:pending.quantity,operation_id:pending.id});localStorage.removeItem(key);if(result&&Number.isFinite(Number(result.coin)))coins.textContent=`🪙 ${Number(result.coin).toLocaleString()}`;await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
-            catch(error){if(/daily limit|not enough|unavailable|invalid exchange quantity/i.test(message(error))){localStorage.removeItem(key);pending=null;quantity.disabled=false}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
+            catch(error){if(/daily limit|not enough|unavailable|invalid exchange quantity/i.test(message(error))){localStorage.removeItem(key);pending=null;control.setLocked(false)}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
           });
           button.disabled=!pending&&(Number(data.coin)<item.coin_price||item.purchased>=item.daily_limit);
-          group.append(label,button);row.append(details,group);ui.list.appendChild(row);
+          group.append(control.element,button);row.append(details,group);ui.list.appendChild(row);
         }
         const row=elem('div','online-row'),details=elem('div');details.append(elem('strong','','🪙 2 Coin'),elem('small','','🍬 1 Candy'));
         const key=`baofantasy_reverse_pending_${window.ZyloxAccount.account.id}`;let pending=null;if(!guest)try{pending=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
-        const group=elem('div','shop-purchase'),label=elem('label','shop-quantity','Qty'),quantity=elem('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label','Candy amount to exchange for Coin');label.appendChild(quantity);
+        const group=elem('div','shop-purchase'),quantity=elem('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label','Candy amount to exchange for Coin');
+        const control=quantityControl(quantity,()=>Math.min(Number(data.candy),Math.floor((Number.MAX_SAFE_INTEGER-Number(data.coin))/2)));
         const total=elem('small');const updateTotal=()=>{const n=quantity.valueAsNumber;total.textContent=Number.isSafeInteger(n)&&n>0&&Number.isSafeInteger(n*2)?`Total: ${n} Candy → ${n*2} Coin`:''};quantity.addEventListener('input',updateTotal);updateTotal();details.appendChild(total);
         const button=action('Exchange',async()=>{
           button.disabled=true;ui.status.textContent='Processing...';
@@ -164,12 +174,12 @@
             if(!Number.isSafeInteger(count)||count<1||!Number.isSafeInteger(count*2)||count>Number(data.candy)){ui.status.textContent='Enter a valid amount within your Candy balance.';button.disabled=false;return}
             if(guest){try{window.ZyloxAccount.exchangeGuestCandy(count);await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}catch(error){ui.status.textContent=message(error);button.disabled=false}return}
             if(!crypto.randomUUID){ui.status.textContent='Secure random IDs are unavailable.';button.disabled=false;return}
-            pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));quantity.disabled=true;
+            pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));control.setLocked(true);
           }
           try{const result=await cloud.rpc('exchange_coin',{quantity:pending.quantity,operation_id:pending.id});localStorage.removeItem(key);if(result&&Number.isFinite(Number(result.coin)))coins.textContent=`🪙 ${Number(result.coin).toLocaleString()}`;await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
-          catch(error){if(/not enough|invalid exchange quantity|balance is too large/i.test(message(error))){localStorage.removeItem(key);pending=null;quantity.disabled=false}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
+          catch(error){if(/not enough|invalid exchange quantity|balance is too large/i.test(message(error))){localStorage.removeItem(key);pending=null;control.setLocked(false)}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
         });
-        button.disabled=!pending&&Number(data.candy)<1;group.append(label,button);row.append(details,group);ui.list.appendChild(row);
+        button.disabled=!pending&&Number(data.candy)<1;group.append(control.element,button);row.append(details,group);ui.list.appendChild(row);
         const reset=elem('span','online-reset');ui.footer.prepend(reset);countdown(reset,data.server_time,data.reset_at,showShop);
       }else{
         const ownedResult=guest?{data:window.ZyloxAccount.guestOwnsWitch()?[{entity_id:'Witch'}]:[]}:await cloud.client.from('player_entities').select('entity_id');
@@ -177,26 +187,28 @@
         if(seq!==viewGeneration||!shopView.classList.contains('show'))return;
         const owned=(ownedResult.data||[]).some(item=>item.entity_id==='Witch');
         const row=elem('div','online-row'),details=elem('div');details.append(elem('strong','','Witch'),elem('small','',`🍬 200 Candy · ${owned?'0/0':'1/1'} remaining`));
-        const group=elem('div','shop-purchase'),label=elem('label','shop-quantity','Qty'),quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max='1';quantity.step='1';quantity.value='1';quantity.disabled=owned;quantity.setAttribute('aria-label','Quantity for Witch');label.appendChild(quantity);
+        const group=elem('div','shop-purchase'),quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max='1';quantity.step='1';quantity.value='1';quantity.setAttribute('aria-label','Quantity for Witch');
+        const control=quantityControl(quantity,()=>owned?0:Math.min(1,Math.floor(Number(data.candy)/200)));
         const button=action('Buy',async()=>{
           if(quantity.valueAsNumber!==1){ui.status.textContent='Witch can only be purchased once.';return}
           button.disabled=true;ui.status.textContent='Processing...';
           try{if(guest)window.ZyloxAccount.purchaseGuestWitch();else await cloud.rpc('purchase_witch');await window.ZyloxAccount.refresh();await window.BaoAdmin?.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
           catch(error){ui.status.textContent=message(error);button.disabled=false}
         });
-        button.disabled=owned||Number(data.candy)<200;group.append(label,button);row.append(details,group);ui.list.appendChild(row);
+        button.disabled=owned||Number(data.candy)<200;group.append(control.element,button);row.append(details,group);ui.list.appendChild(row);
         const ghost=guest?window.ZyloxAccount.guestGhostState():await cloud.rpc('ghost_state');
         if(seq!==viewGeneration||!shopView.classList.contains('show'))return;
         const ghostRow=elem('div','online-row'),ghostDetails=elem('div');
         ghostDetails.append(elem('strong','','👻 Ghost Token'),elem('small','',`🍬 500 Candy · ${ghost.purchased||ghost.owned?'0/0':'1/1'} remaining`));
-        const ghostGroup=elem('div','shop-purchase'),ghostLabel=elem('label','shop-quantity','Qty'),ghostQty=elem('input');ghostQty.type='number';ghostQty.min='1';ghostQty.max='1';ghostQty.step='1';ghostQty.value='1';ghostQty.disabled=!!(ghost.purchased||ghost.owned);ghostQty.setAttribute('aria-label','Quantity for Ghost Token');ghostLabel.appendChild(ghostQty);
+        const ghostGroup=elem('div','shop-purchase'),ghostQty=elem('input');ghostQty.type='number';ghostQty.min='1';ghostQty.max='1';ghostQty.step='1';ghostQty.value='1';ghostQty.setAttribute('aria-label','Quantity for Ghost Token');
+        const ghostControl=quantityControl(ghostQty,()=>ghost.purchased||ghost.owned?0:Math.min(1,Math.floor(Number(data.candy)/500)));
         const ghostBuy=action('Buy',async()=>{
           if(ghostQty.valueAsNumber!==1){ui.status.textContent='Ghost Token can only be purchased once.';return}
           ghostBuy.disabled=true;ui.status.textContent='Processing...';
           try{if(guest)window.ZyloxAccount.purchaseGuestGhost();else await cloud.rpc('purchase_ghost_token');await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
           catch(error){if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);ghostBuy.disabled=false}}
         });
-        ghostBuy.disabled=!!(ghost.purchased||ghost.owned)||Number(data.candy)<500;ghostGroup.append(ghostLabel,ghostBuy);ghostRow.append(ghostDetails,ghostGroup);ui.list.appendChild(ghostRow);
+        ghostBuy.disabled=!!(ghost.purchased||ghost.owned)||Number(data.candy)<500;ghostGroup.append(ghostControl.element,ghostBuy);ghostRow.append(ghostDetails,ghostGroup);ui.list.appendChild(ghostRow);
       }
     }catch(error){if(seq===viewGeneration){ui.list.textContent='';ui.status.textContent=message(error)}}
   }
