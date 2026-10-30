@@ -15,7 +15,7 @@
 </head><body><div class="gc">
 <canvas id="gameCanvas"></canvas>
 <div id="gameHint" role="status"><strong>Ready to fly?</strong>Press Space or ↑, or click / tap to start and flap.</div>
-<div id="milestoneHUD">SCORE: 0</div>
+<div id="milestoneHUD">MILESTONE: 0</div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
 </div><script src="game-replay.js?v=ghost-chance-1"></script><script src="entity-art.js"></script><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
@@ -34,7 +34,7 @@ let cfg = diffConfigs[diffName] || diffConfigs['Easy'];
 let pSpd = cfg.baseSpd;
 const PG = cfg.gap; 
 const milestoneEl=document.getElementById('milestoneHUD');
-milestoneEl.textContent='SCORE: '+best;
+milestoneEl.textContent='MILESTONE: '+best;
 const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),BH=540,PW=60,PD=480,GRAV=.7,FLP=-10;
 let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0,gameplayRandom=Math.random,effectRandom=Math.random,onlineRun=null;
 let entity=localStorage.getItem('zylox_entity')||'Bat',doubleNotice=0,ghostEligible=false,ghostCollected=false,ghostRandom=Math.random,gapNumber=0;
@@ -156,7 +156,7 @@ function update(step){
   if(pipes.length===0 || pipes[pipes.length-1].x<=W-PD){const prevTop = pipes.length>0 ? pipes[pipes.length-1].topHeight : undefined;pipes.push(makePipe(W,getNextPipeTop(prevTop)));}
   for(const p of pipes){
     p.x-=cSpd*step;
-    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best&&!onlineRun?.admin){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
+    if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best&&!onlineRun?.admin){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='MILESTONE: '+best;}}
     if(entity!=='Ghost'&&cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
     if(entity==='Ghost'&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2+60))<cr.r+12)gameOver();
     if(state==='playing'&&p.ghost&&!ghostCollected&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.ghost=false;ghostCollected=true;if(onlineRun&&!onlineRun.admin)onlineRun.ghostPending=true;if(window.ZyloxAccount?.isOfflineGuest)window.ZyloxAccount.findGuestGhost();window.ZyloxSound?.play('candy');}
@@ -226,5 +226,5 @@ requestAnimationFrame(gameLoop);
 function exitToLobby(){if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun);window.location.href='index.html'}
 window.addEventListener('pagehide',()=>{if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
-document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='SCORE: '+best});
+document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='MILESTONE: '+best});
 </script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=candy-coin-1"></script><script src="online-runs.js?v=ghost-chance-1"></script></body></html>
