@@ -50,6 +50,7 @@
 .setting-account{width:100%;text-align:left;cursor:pointer;font:inherit}.setting-account:hover{border-color:#b794f6;background:rgba(59,37,98,.8)}
 .setting-footer{display:flex;justify-content:center;flex-shrink:0}.setting-footer .perf-back{margin:0}
 .inventory-view{inset:4px 25px 8px;align-items:stretch;justify-content:flex-start;gap:8px}.inventory-list{flex:1;min-height:0;overflow:auto;padding:4px}.inventory-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #6b4fa0;border-radius:9px;background:rgba(42,26,74,.6);color:#e0c8ff;font-weight:700}.inventory-view .perf-back{align-self:center;margin:0}
+.inventory-item+.inventory-item{margin-top:8px}.ghost-badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin-right:8px;border:2px solid #b794f6;border-radius:50%;background:radial-gradient(circle,#5a397b,#1b1032);box-shadow:0 0 10px rgba(183,148,246,.55);font-size:17px;vertical-align:middle}.inventory-item[hidden]{display:none}
 .music-view{justify-content:flex-start;gap:5px;inset:4px 30px 8px}
 .music-list{width:min(100%,480px);flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:5px;padding:4px}
 .music-list::-webkit-scrollbar{width:4px}.music-list::-webkit-scrollbar-thumb{background:#6b4fa0;border-radius:3px}
@@ -142,7 +143,7 @@
     </div>
     
     <div class="perf-view inventory-view" id="inventoryView">
-      <div class="inventory-list"><div class="inventory-item"><span>🍬 Candy</span><strong id="inventoryCandy">0</strong></div></div>
+      <div class="inventory-list"><div class="inventory-item"><span>🍬 Candy</span><strong id="inventoryCandy">0</strong></div><div class="inventory-item" id="inventoryGhost" hidden><span><span class="ghost-badge" aria-hidden="true">👻</span>Ghost Token</span><strong>1</strong></div></div>
       <button class="perf-back" onclick="closeAllViews()">&#8592; Back</button>
     </div>
     <div class="perf-view music-view" id="musicView">
@@ -247,6 +248,15 @@
     const n=Number(window.ZyloxAccount?.getCandy() || 0);
     document.getElementById('inventoryCandy').textContent=Number.isSafeInteger(n)&&n>0?n:0;
     document.getElementById('inventoryView').classList.add('show');
+    refreshGhostInventory();
+  }
+  async function refreshGhostInventory(){
+    const item=document.getElementById('inventoryGhost'),account=window.ZyloxAccount;
+    if(!account?.ready){item.hidden=true;return}
+    const owner=account.account?.id;
+    try{const state=account.isOfflineGuest?account.guestGhostState():account.isOnline?await window.BaoCloud.rpc('ghost_state'):null;
+      if(window.ZyloxAccount?.account?.id===owner)item.hidden=!state?.purchased||!!state.claimed;
+    }catch(_){item.hidden=true}
   }
   function openMusic(){
     closeAllViews();
@@ -369,4 +379,4 @@
   drawBatWings(batIconCtx, 0, 0);
   batIconCtx.restore();
 document.addEventListener('zylox-progress-updated',()=>{document.getElementById('inventoryCandy').textContent=window.ZyloxAccount?.getCandy()||0});
-</script><script src="entity-art.js"></script><script src="entities-preview.js"></script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=online-1"></script><script src="admin.js"></script><script src="online-runs.js"></script><script src="online-ui.js"></script></body></html>
+</script><script src="entity-art.js"></script><script src="entities-preview.js?v=ghost-weekly-1"></script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=ghost-weekly-1"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-weekly-1"></script><script src="online-ui.js?v=ghost-weekly-1"></script></body></html>

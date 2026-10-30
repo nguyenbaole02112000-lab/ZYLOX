@@ -48,7 +48,7 @@ window.BaoCloud={
   await page.goto('https://test.github.io/setting.html');
   await page.waitForFunction(()=>window.ZyloxAccount.ready);
   await page.getByText('Shop',{exact:true}).click();await page.getByRole('button',{name:'One-Time Shop'}).click();
-  await page.getByRole('button',{name:'Buy'}).click();
+  await page.locator('#shopView .online-row').filter({hasText:'Witch'}).getByRole('button',{name:'Buy'}).click();
   await page.waitForFunction(()=>document.querySelector('#shopView').innerText.includes('0/0'));
   assert.equal(await page.evaluate(()=>window.ZyloxAccount.getCandy()),50);
   await page.reload();await page.waitForFunction(()=>window.ZyloxAccount.ready&&window.BaoAdmin.state.owned.includes('Witch'));
@@ -57,6 +57,20 @@ window.BaoCloud={
   await page.locator('#inventoryView').getByRole('button',{name:'← Back'}).click();
   await page.getByText('Entity',{exact:true}).click();await page.locator('[data-entity="Witch"]').click();
   await page.locator('#equipBtn').click();assert.equal(await page.evaluate(()=>localStorage.getItem('zylox_entity')),'Witch');
+  await page.evaluate(()=>localStorage.setItem('zylox_offline_candy_extra','500'));
+  await page.locator('#entityView').getByRole('button',{name:'← Back'}).click();
+  await page.getByText('Shop',{exact:true}).click();await page.getByRole('button',{name:'One-Time Shop'}).click();
+  await page.locator('#shopView .online-row').filter({hasText:'Ghost Token'}).getByRole('button',{name:'Buy'}).click();
+  await page.waitForFunction(()=>window.ZyloxAccount.guestGhostState().purchased);
+  assert.equal(await page.evaluate(()=>window.ZyloxAccount.getCandy()),50);
+  await page.reload();await page.waitForFunction(()=>window.ZyloxAccount.ready);
+  await page.getByText('Inventory',{exact:true}).click();await page.waitForSelector('#inventoryGhost:not([hidden])');
+  await page.locator('#inventoryView').getByRole('button',{name:'← Back'}).click();
+  await page.evaluate(()=>window.ZyloxAccount.findGuestGhost());
+  await page.getByRole('button',{name:/Quests/}).click();await page.getByRole('button',{name:'Special'}).click();
+  await page.getByRole('button',{name:'Claim',exact:true}).click();await page.waitForFunction(()=>window.BaoAdmin.state.owned.includes('Ghost'));
+  await page.locator('#questView').getByRole('button',{name:'← Back'}).click();
+  await page.getByText('Inventory',{exact:true}).click();assert.ok(await page.locator('#inventoryGhost').isHidden());
   assert.deepEqual(errors,[]);console.log('Mock auth smoke passed: signup, reload, logout, login and progress');
  }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exitCode=1});

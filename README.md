@@ -23,12 +23,24 @@ it uses Supabase's server-only default environment variables. Client-submitted
 actions are replayed on the server before score and Candy updates are accepted.
 This detects inconsistent play but cannot prevent every automated player.
 
-The shop exchanges 10 Coin for 5 Candy, up to five times per day. Shop and
+The shop exchanges 10 Coin for 5 Candy, up to ten times per day. Shop and
 daily quests reset at midnight in Asia/Ho_Chi_Minh; weekly quests reset at
 midnight on Monday. Online games stop just before the daily reset. Their
 verified progress is assigned to the period in which they started. If it
 arrives after the period closes, completed rewards are settled automatically.
-Special Quests are reserved for future entity unlocks and currently empty.
+In One-Time Shop, Witch costs 200 Candy and Ghost Token costs 500 Candy. With
+the token, collect a Ghost Token in a Nightmare game as Witch, then claim the
+Mythical Ghost Quest to unlock Ghost. The token disappears from Inventory after
+claiming. Guest progress is saved only on the current browser.
+
+The weekly leaderboard is separate for each map and difficulty. First, second,
+and third place receive 25/20/15 Coin in Easy, 50/35/20 in Medium, 65/50/35
+in Hard, 80/65/50 in Extreme, and 100/75/50 in Nightmare. It resets at
+midnight on Monday in Asia/Ho_Chi_Minh; all-time best scores remain intact.
+`pg_cron` checks for completed weeks every five minutes. Rewards are paid
+automatically after a five-minute grace period for syncing runs. A replay
+received later still updates regular progress but not the closed leaderboard.
+Players must sync before that grace period ends for a score to affect rewards.
 
 Admin membership is maintained by the project owner in the private
 `game_private.admin_roles` table, using a verified Supabase user ID. No admin

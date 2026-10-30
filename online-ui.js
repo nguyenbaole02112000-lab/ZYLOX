@@ -10,6 +10,7 @@
     .leaderboard{width:55cqw;max-height:48cqw;display:flex;flex-direction:column;gap:.7cqw;border:.2cqw solid #6b4fa0;border-radius:1cqw;background:#1b1032;color:#e0c8ff;padding:1.5cqw;font-size:1.4cqw;box-shadow:0 0 3cqw rgba(138,92,255,.4)}
     .leaderboard h2{font:900 2cqw Cinzel,serif;color:#f7d51d;text-align:center}.leaderboard p{text-align:center}.leaderboard-list{overflow-y:auto;min-height:0;max-height:30cqw}.leaderboard-row{display:grid;grid-template-columns:4cqw minmax(0,1fr) 5cqw;gap:.5cqw;align-items:center;padding:.7cqw;border-bottom:1px solid rgba(183,148,246,.15)}
     .leaderboard-close{align-self:center;padding:.6cqw 1.3cqw;border:1px solid #8a5cff;border-radius:8px;background:#382258;color:#fff;font-weight:bold;cursor:pointer}
+    .leaderboard-rewards{color:#ffe287;text-align:center;font-size:.9em}.leaderboard-reset{color:#cbb3eb;text-align:center;font-size:.85em}
     .leaderboard-row span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.leaderboard-row span:last-child{text-align:right}.leaderboard-me{color:#ffe287}
     .online-view{position:absolute;inset:4px 25px 8px;display:none;flex-direction:column;gap:7px;z-index:3;color:#e0c8ff;min-height:0;animation:fadeIn .3s ease}
     .online-view.show{display:flex}.online-heading{font:900 clamp(13px,2vw,20px) Cinzel,serif;color:#f7d51d;text-align:center}
@@ -20,6 +21,8 @@
     .online-reset{font-size:12px;color:#cbb3eb}.coin-pop{animation:coinPop .6s ease}@keyframes coinPop{50%{transform:scale(1.25);color:#fff}}
     .shop-coin{position:absolute;top:0;right:0;padding:5px 10px;border:1px solid #d6aa42;border-radius:99px;color:#ffe287;background:rgba(10,6,18,.8);font:bold 13px Cinzel,serif;white-space:nowrap}
     .shop-purchase{display:flex;align-items:center;gap:6px}.shop-quantity{display:flex;align-items:center;gap:4px;color:#cbb3eb;font-size:12px}.shop-quantity input{width:52px;padding:5px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:#fff;font:inherit}.shop-quantity input:disabled{opacity:.55}
+    .quest-layout{display:flex;flex:1;min-height:0;gap:8px}.quest-layout .online-list{flex:1}.quest-filter{display:flex;flex-direction:column;gap:5px;min-width:92px}.quest-filter .online-tab{padding:6px;text-align:left}.quest-filter-label{font-size:11px;color:#bda9dc;text-transform:uppercase;letter-spacing:.08em}
+    .special-quest{display:flex;flex-direction:column;gap:6px}.special-title{border:0;background:transparent;color:#e0c8ff;font-weight:800;text-align:left;cursor:pointer}.special-child{padding:8px;border-top:1px solid rgba(183,148,246,.25);color:#d3c5ea;font-size:12px}.special-check{color:#74e3a4;font-weight:bold}.special-claimed{opacity:.55}
     @media(max-width:600px){.leaderboard{width:70cqw;font-size:10px}.leaderboard h2{font-size:12px}.leaderboard-row{grid-template-columns:25px minmax(0,1fr) 35px}.leaderboard-preview{width:28cqw;font-size:9px}.leaderboard-preview p{font-size:8px}.leaderboard-preview-list .leaderboard-row{grid-template-columns:18px minmax(0,1fr) 22px}.leaderboard-open{font-size:9px}.coin-balance{font-size:10px}.online-view{inset:2px 12px 5px;gap:3px}.online-row{padding:5px}.online-action,.online-tab{padding:4px 8px}.online-status,.online-reset{font-size:10px}.shop-coin{font-size:10px;padding:3px 7px}}
   `;
   document.head.appendChild(style);
@@ -35,12 +38,20 @@
     const open=action('🏆 Leaderboard',()=>{overlay.hidden=false;loadBoard()});open.className='leaderboard-open';
     const previewSubtitle=elem('p','',''),previewRows=elem('div','leaderboard-preview-list');previewRows.tabIndex=0;previewRows.setAttribute('aria-label','Leaderboard preview, scroll to browse');
     previewRows.addEventListener('click',event=>{if(event.target.closest('.leaderboard-row'))open.click()});
-    preview.append(open,previewSubtitle,previewRows);container.appendChild(preview);
+    const previewRewards=elem('div','leaderboard-rewards',''),previewReset=elem('div','leaderboard-reset','');
+    preview.append(open,previewSubtitle,previewRows,previewRewards,previewReset);container.appendChild(preview);
     const overlay=elem('div','leaderboard-overlay');overlay.hidden=true;
     const panel=elem('section','leaderboard');panel.setAttribute('aria-label','Leaderboard');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
     panel.append(elem('h2','','🏆 Leaderboard'));
-    const subtitle=elem('p','',''),rows=elem('div','leaderboard-list','');const close=action('← Back',()=>{overlay.hidden=true;open.focus()});close.className='leaderboard-close';panel.append(subtitle,rows,close);overlay.appendChild(panel);container.appendChild(overlay);
-    let request=0;
+    const subtitle=elem('p','',''),rows=elem('div','leaderboard-list',''),rewards=elem('div','leaderboard-rewards',''),reset=elem('div','leaderboard-reset','');const close=action('← Back',()=>{overlay.hidden=true;open.focus()});close.className='leaderboard-close';panel.append(subtitle,rows,rewards,reset,close);overlay.appendChild(panel);container.appendChild(overlay);
+    let request=0,boardTimer=0;
+    function startBoardClock(data){
+      clearInterval(boardTimer);const remaining=Date.parse(data.reset_at)-Date.parse(data.server_time),start=performance.now();
+      if(!Number.isFinite(remaining)){reset.textContent=previewReset.textContent='';return}
+      let ended=false;const update=()=>{const seconds=Math.max(0,Math.floor((remaining-(performance.now()-start))/1000)),days=Math.floor(seconds/86400),hours=Math.floor(seconds%86400/3600),minutes=Math.floor(seconds%3600/60),s=seconds%60;
+        reset.textContent=previewReset.textContent=`Reset after: ${days}d ${hours}h ${minutes}m ${s}s`;
+        if(!seconds&&!ended){ended=true;clearInterval(boardTimer);setTimeout(loadBoard,1500)}};update();if(!ended)boardTimer=setInterval(update,1000);
+    }
     async function loadBoard(){
       const seq=++request,map=document.getElementById('mapTitle').textContent,difficulty=document.getElementById('diffName').textContent;
       subtitle.textContent=previewSubtitle.textContent=`${map} · ${difficulty}`;rows.textContent=previewRows.textContent='Loading...';
@@ -49,6 +60,8 @@
         const actualMap=map.toLowerCase()==='halloween'?'Halloween':map;
         const data=await cloud.rpc('leaderboard',{map_key:actualMap,difficulty_key:difficulty});
         if(seq!==request)return;
+        if(Array.isArray(data?.rewards)&&data.rewards.length===3)rewards.textContent=previewRewards.textContent=`🥇 ${data.rewards[0]} · 🥈 ${data.rewards[1]} · 🥉 ${data.rewards[2]} Coin`;
+        startBoardClock(data);
         for(const target of [rows,previewRows]){
           target.replaceChildren();
           if(!data?.top?.length){target.textContent='No scores yet.';continue}
@@ -63,6 +76,7 @@
     const observer=new MutationObserver(loadBoard);
     observer.observe(document.getElementById('mapTitle'),{childList:true,characterData:true,subtree:true});
     observer.observe(document.getElementById('diffName'),{childList:true,characterData:true,subtree:true});
+    setInterval(()=>{if(!document.hidden&&isOnline())window.ZyloxAccount?.refresh()},60000);
     updateCoins();loadBoard();
   }
 
@@ -76,7 +90,7 @@
   if(entityTab){const q=elem('button','tab');q.type='button';q.innerHTML='<span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3z"/><path d="M7 3v15a3 3 0 0 0-3 0M10 8h6M10 12h6M10 16h4"/></svg></span><span class="tab-name">Quests</span><span class="tab-arrow">▸</span>';q.addEventListener('click',()=>openPanel('quests'));entityTab.after(q)}
   const shopTab=[...tabs.querySelectorAll('.tab')].find(el=>el.querySelector('.tab-name')?.textContent.trim()==='Shop');
   if(shopTab){shopTab.setAttribute('role','button');shopTab.tabIndex=0;shopTab.addEventListener('click',()=>openPanel('shop'));shopTab.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openPanel('shop')}})}
-  let viewGeneration=0, countdownTimer=0, period='daily', shopSection='daily';
+  let viewGeneration=0, countdownTimer=0, period='daily', shopSection='daily',questFilter='all',ghostExpanded=false;
   function stopClock(){if(countdownTimer)clearInterval(countdownTimer);countdownTimer=0}
   function countdown(target,serverTime,resetAt,onEnd){
     stopClock();const remainingAtStart=Math.max(0,Date.parse(resetAt)-Date.parse(serverTime)),started=performance.now();let ended=false;
@@ -89,7 +103,7 @@
     stopClock();window.closeAllViews();tabs.style.display='none';box.classList.add('entity-mode');
     title.textContent=which==='shop'?'⚜ Shop ⚜':'⚜ Quests ⚜';
     const view=which==='shop'?shopView:questView;view.classList.add('show');
-    if(which==='shop'){shopSection='daily';showShop()}else{period='daily';showQuests()}
+    if(which==='shop'){shopSection='daily';showShop()}else{period='daily';questFilter='all';showQuests()}
   }
   function baseView(view,heading){
     view.replaceChildren();view.appendChild(elem('div','online-heading',heading));
@@ -154,22 +168,61 @@
           catch(error){ui.status.textContent=message(error);button.disabled=false}
         });
         button.disabled=owned||Number(data.candy)<200;group.append(label,button);row.append(details,group);ui.list.appendChild(row);
+        const ghost=guest?window.ZyloxAccount.guestGhostState():await cloud.rpc('ghost_state');
+        if(seq!==viewGeneration||!shopView.classList.contains('show'))return;
+        const ghostRow=elem('div','online-row'),ghostDetails=elem('div');
+        ghostDetails.append(elem('strong','','👻 Ghost Token'),elem('small','',`🍬 500 Candy · ${ghost.purchased||ghost.owned?'0/0':'1/1'} remaining`));
+        const ghostGroup=elem('div','shop-purchase'),ghostLabel=elem('label','shop-quantity','Qty'),ghostQty=elem('input');ghostQty.type='number';ghostQty.min='1';ghostQty.max='1';ghostQty.step='1';ghostQty.value='1';ghostQty.disabled=!!(ghost.purchased||ghost.owned);ghostQty.setAttribute('aria-label','Quantity for Ghost Token');ghostLabel.appendChild(ghostQty);
+        const ghostBuy=action('Buy',async()=>{
+          if(ghostQty.valueAsNumber!==1){ui.status.textContent='Ghost Token can only be purchased once.';return}
+          ghostBuy.disabled=true;ui.status.textContent='Processing...';
+          try{if(guest)window.ZyloxAccount.purchaseGuestGhost();else await cloud.rpc('purchase_ghost_token');await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
+          catch(error){if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);ghostBuy.disabled=false}}
+        });
+        ghostBuy.disabled=!!(ghost.purchased||ghost.owned)||Number(data.candy)<500;ghostGroup.append(ghostLabel,ghostBuy);ghostRow.append(ghostDetails,ghostGroup);ui.list.appendChild(ghostRow);
       }
     }catch(error){if(seq===viewGeneration){ui.list.textContent='';ui.status.textContent=message(error)}}
   }
   async function showQuests(){
     const seq=++viewGeneration;stopClock();const selectedPeriod=period;
-    if(!isOnline()||!cloud){requireLogin(questView,'Quests');return}
+    const guest=!!window.ZyloxAccount?.isOfflineGuest;
+    if(!isOnline()&&!guest){requireLogin(questView,'Quests');return}
     const ui=baseView(questView,'Quests');const tabRow=elem('div','online-tabs');questView.insertBefore(tabRow,ui.list);
     for(const value of ['daily','weekly','special']){const tab=action(value[0].toUpperCase()+value.slice(1),()=>{period=value;showQuests()});tab.className='online-tab'+(period===value?' active':'');tabRow.appendChild(tab)}
+    const layout=elem('div','quest-layout'),filters=elem('div','quest-filter');filters.appendChild(elem('span','quest-filter-label','Filter'));
+    for(const [value,label] of [['all','All'],['unclaimed','Unclaimed'],['claimed','Claimed']]){const tab=action(label,()=>{questFilter=value;showQuests()});tab.className='online-tab'+(questFilter===value?' active':'');filters.appendChild(tab)}
+    questView.insertBefore(layout,ui.list);layout.append(filters,ui.list);
     ui.footer.appendChild(backButton());
-    if(period==='special'){ui.list.appendChild(elem('p','','No Special Quests Available'));return}
+    if(period==='special'){
+      ui.list.textContent='Loading...';
+      try{
+        const ghost=guest?window.ZyloxAccount.guestGhostState():await cloud.rpc('ghost_state');
+        if(seq!==viewGeneration||!questView.classList.contains('show'))return;
+        ui.list.replaceChildren();
+        if((questFilter==='claimed'&&!ghost.claimed)||(questFilter==='unclaimed'&&ghost.claimed)){ui.list.appendChild(elem('p','','No quests in this filter.'));return}
+        const card=elem('div','online-row special-quest'+(ghost.claimed?' special-claimed':'')),top=elem('div','online-row'),details=elem('div');
+        const titleButton=action(`${ghostExpanded?'▾':'▸'} Mythical Ghost Quest`,()=>{ghostExpanded=!ghostExpanded;child.hidden=!ghostExpanded;titleButton.textContent=`${ghostExpanded?'▾':'▸'} Mythical Ghost Quest`;titleButton.setAttribute('aria-expanded',String(ghostExpanded))});titleButton.className='special-title';titleButton.setAttribute('aria-expanded',String(ghostExpanded));
+        details.append(titleButton,elem('small','',`Progress: ${ghost.found?1:0}/1 · ${ghost.claimed?'Claimed':ghost.found?'Completed':'In Progress'}`),elem('small','online-reward','Reward: Ghost'));
+        const claim=action(ghost.claimed?'Claimed':'Claim',async()=>{
+          claim.disabled=true;ui.status.textContent='Claiming...';
+          try{if(guest)window.ZyloxAccount.claimGuestGhost();else await cloud.rpc('claim_ghost_quest');await window.ZyloxAccount.refresh();await window.BaoAdmin?.refresh();if(questView.classList.contains('show')&&period==='special')showQuests()}
+          catch(error){ui.status.textContent=message(error);claim.disabled=false}
+        });claim.disabled=!!ghost.claimed||!ghost.found;
+        top.append(details,claim);const child=elem('div','special-child');child.hidden=!ghostExpanded;
+        const mark=elem('span',ghost.found?'special-check':'',ghost.found?'✓ ':'○ ');child.append(mark,document.createTextNode(`Collect Ghost Token as Witch in Nightmare · ${ghost.found?1:0}/1`));
+        if(!ghost.purchased)child.appendChild(elem('small','','Purchase Ghost Token in One-Time Shop first.'));
+        card.append(top,child);ui.list.appendChild(card);
+      }catch(error){if(seq===viewGeneration){ui.list.textContent='';ui.status.textContent=message(error)}}
+      return;
+    }
+    if(guest){ui.list.textContent='Sign in with a registered account to use Daily and Weekly Quests.';return}
     ui.list.textContent='Loading...';
     try{
       const data=await cloud.rpc('quest_state',{period_name:period});if(seq!==viewGeneration||!questView.classList.contains('show'))return;
       ui.list.replaceChildren();
-      if(!data?.quests?.length)ui.list.appendChild(elem('p','','No quests available.'));
-      for(const quest of data.quests||[]){
+      const visible=(data.quests||[]).filter(quest=>questFilter==='all'||(questFilter==='claimed' ? quest.claimed : !quest.claimed));
+      if(!visible.length)ui.list.appendChild(elem('p','','No quests in this filter.'));
+      for(const quest of visible){
         const row=elem('div','online-row'),details=elem('div');const icon={easy:'🌱',medium:'⚡',hard:'🔥',summary:'🏆'}[quest.difficulty]||'📜';details.appendChild(elem('strong','',`${icon} ${quest.title}`));
         const label=elem('small','',`${quest.progress} / ${quest.target} · ${quest.claimed?'Claimed':quest.progress>=quest.target?'Completed':'In Progress'}`);details.appendChild(label);
         const progress=elem('progress');progress.max=quest.target;progress.value=quest.progress;progress.setAttribute('aria-label',quest.title);details.appendChild(progress);

@@ -7,13 +7,16 @@ const mock = `
 window.calls=[];
 window.BaoCloud={
   rpc:async(name,args={})=>{calls.push([name,args]);
-    if(name==='leaderboard')return {top:Array.from({length:20},(_,i)=>({rank:i+1,username:i?'Player'+(i+1):'Player',score:20-i})),me:null};
+    if(name==='leaderboard')return {top:Array.from({length:20},(_,i)=>({rank:i+1,username:i?'Player'+(i+1):'Player',score:20-i})),me:null,rewards:args.difficulty_key==='Easy'?[25,20,15]:[50,35,20],server_time:new Date().toISOString(),reset_at:new Date(Date.now()+86400000).toISOString()};
     if(name==='admin_state')return {is_admin:localStorage.getItem('mock-admin')==='yes',enabled:localStorage.getItem('mock-admin-mode')==='yes'};
     if(name==='set_admin_mode'){localStorage.setItem('mock-admin-mode',args.desired?'yes':'no');return {is_admin:true,enabled:args.desired}};
     if(name==='quest_state')return {server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',quests:[{id:'d01',title:'Play a game',progress:1,target:1,reward:10,claimed:false}]};
-    if(name==='shop_state')return {coin:50-10*Number(localStorage.getItem('mock-exchange')||0),candy:localStorage.getItem('mock-witch')==='yes'?65:250,server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:Number(localStorage.getItem('mock-exchange')||0)}]};
+    if(name==='shop_state')return {coin:50-10*Number(localStorage.getItem('mock-exchange')||0),candy:localStorage.getItem('mock-ghost')?100:localStorage.getItem('mock-witch')==='yes'?600:800,server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:Number(localStorage.getItem('mock-exchange')||0)}]};
     if(name==='claim_quests')return {reward_received:10};
     if(name==='purchase_witch'){localStorage.setItem('mock-witch','yes');return {owned:true,candy:50}};
+    if(name==='ghost_state'){const state=localStorage.getItem('mock-ghost');return {purchased:!!state,found:state==='found'||state==='claimed',claimed:state==='claimed',owned:state==='claimed',price:500}};
+    if(name==='purchase_ghost_token'){localStorage.setItem('mock-ghost','purchased');return {purchased:true}};
+    if(name==='claim_ghost_quest'){localStorage.setItem('mock-ghost','claimed');return {claimed:true}};
     if(name==='exchange_candy_bulk'){localStorage.setItem('mock-exchange',String(args.quantity));return {coin:50-10*args.quantity}};
     if(name==='start_game'){const now=Date.now();return {id:'test-run',seed:12345,admin_mode:false,started_at:new Date(now).toISOString(),server_time:new Date(now).toISOString(),quest_cutoff_at:new Date(now+86400000).toISOString()}};
     return {};
@@ -42,6 +45,8 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     assert.ok(await page.locator('#feedbackOverlay').evaluate(el=>el.classList.contains('show')));
     await page.locator('#feedbackOverlay .ccb').click();
     await page.waitForSelector('.leaderboard-preview-list .leaderboard-row');
+    assert.match(await page.locator('.leaderboard-preview').innerText(),/25.*20.*15 Coin/);
+    assert.match(await page.locator('.leaderboard-preview').innerText(),/Reset after:/);
     const logo=await page.locator('.la').boundingBox(),preview=await page.locator('.leaderboard-preview').boundingBox();
     assert.ok(preview.y>=logo.y+logo.height,'leaderboard must remain below the logo');
     const previewList=page.locator('.leaderboard-preview-list');
@@ -79,7 +84,11 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.getByRole('button',{name:'Weekly'}).click();
     await page.waitForFunction(()=>calls.some(c=>c[0]==='quest_state'&&c[1].period_name==='weekly'));
     await page.getByRole('button',{name:'Special'}).click();
-    assert.match(await page.locator('#questView').innerText(),/No Special Quests Available/);
+    assert.match(await page.locator('#questView').innerText(),/Mythical Ghost Quest/);
+    await page.getByRole('button',{name:/Mythical Ghost Quest/}).click();
+    assert.match(await page.locator('#questView').innerText(),/Collect Ghost Token as Witch in Nightmare/);
+    await page.locator('.quest-filter').getByRole('button',{name:'Claimed',exact:true}).click();
+    assert.match(await page.locator('#questView').innerText(),/No quests in this filter/);
     assert.equal(await page.locator('#questView').getByText('Reset in').count(),0);
     await page.getByRole('button',{name:'← Back'}).last().click();
     await page.getByText('Shop',{exact:true}).click();
@@ -93,10 +102,21 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.evaluate(()=>window.slowRefresh=false);
     await page.getByRole('button',{name:'One-Time Shop'}).click();
     assert.equal(await page.getByRole('spinbutton',{name:'Quantity for Witch'}).getAttribute('max'),'1');
-    await page.getByRole('button',{name:'Buy'}).click();
+    await page.locator('#shopView .online-row').filter({hasText:'Witch'}).getByRole('button',{name:'Buy'}).click();
     await page.waitForFunction(()=>calls.some(c=>c[0]==='purchase_witch'));
     await page.waitForFunction(()=>document.querySelector('#shopView')?.innerText.includes('0/0'));
-    assert.ok(await page.getByRole('button',{name:'Buy'}).isDisabled());
+    assert.ok(await page.locator('#shopView .online-row').filter({hasText:'Witch'}).getByRole('button',{name:'Buy'}).isDisabled());
+    await page.locator('#shopView .online-row').filter({hasText:'Ghost Token'}).getByRole('button',{name:'Buy'}).click();
+    await page.waitForFunction(()=>calls.some(c=>c[0]==='purchase_ghost_token'));
+    await page.waitForFunction(()=>document.querySelector('#shopView')?.innerText.includes('Ghost Token')&&document.querySelector('#shopView')?.innerText.includes('0/0'));
+    await page.locator('#shopView').getByRole('button',{name:'← Back'}).click();
+    await page.getByText('Inventory',{exact:true}).click();await page.waitForSelector('#inventoryGhost:not([hidden])');
+    await page.locator('#inventoryView').getByRole('button',{name:'← Back'}).click();
+    await page.evaluate(()=>localStorage.setItem('mock-ghost','found'));
+    await page.getByRole('button',{name:/Quests/}).click();await page.getByRole('button',{name:'Special'}).click();
+    await page.getByRole('button',{name:'Claim',exact:true}).click();
+    await page.waitForFunction(()=>calls.some(c=>c[0]==='claim_ghost_quest'));
+    await page.waitForFunction(()=>document.querySelector('#questView')?.innerText.includes('Claimed'));
     await page.goto('https://test.github.io/halloween.html');
     const totals=await page.evaluate(()=>{onlineRun={id:'hud-test',admin:false,collectedCandy:0,syncedCandy:0};addCandy();const immediate=candyTotal();localStorage.setItem('mock-candy','6');window.BaoRunSynced({id:'hud-test',collectedCandy:1});const synced=candyTotal();onlineRun=null;return [immediate,synced]});
     assert.deepEqual(totals,[6,6]);
@@ -120,7 +140,7 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     assert.ok(await page.getByRole('button',{name:'Account',exact:true}).isVisible());
     await back.click();
     await page.getByText('Quests',{exact:true}).click();await page.getByRole('button',{name:'Special'}).click();
-    assert.match(await page.locator('#questView').innerText(),/No Special Quests Available/);
+    assert.match(await page.locator('#questView').innerText(),/Mythical Ghost Quest/);
     assert.deepEqual(errors,[]);
     console.log('UI smoke passed: leaderboard filtering, admin toggle, quest tabs, shop, replay and mobile view');
   }finally{await browser.close()}

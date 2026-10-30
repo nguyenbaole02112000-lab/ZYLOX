@@ -25,10 +25,13 @@ const sql=name=>fs.readFileSync(path.join(root,'supabase/migrations',name),'utf8
   await db.exec(sql('20261030041711_one_time_witch_shop.sql'));
   await db.exec(sql('20261030042512_bulk_candy_exchange.sql'));
   await db.exec(sql('20261030043049_candy_exchange_ten_daily.sql'));
+  await db.exec(sql('20261030053455_ghost_quest_and_weekly_scores.sql'));
+  await db.exec(sql('20261030053719_weekly_late_submission_cutoff.sql'));
   const after=await db.query(`select p.id,p.username,p.display_name,w.coin,w.candy,l.score from public.profiles p join public.player_wallets w on w.user_id=p.id join game_private.leaderboard_scores l on l.user_id=p.id`);
   assert.deepEqual(after.rows,before.rows,'migration must preserve existing accounts, wallet and leaderboard');
   await db.exec(fs.readFileSync(path.join(root,'tests/witch-shop.sql'),'utf8'));
   await db.exec(fs.readFileSync(path.join(root,'tests/bulk-exchange.sql'),'utf8'));
+  await db.exec(fs.readFileSync(path.join(root,'tests/ghost-weekly.sql'),'utf8'));
   await db.exec(fs.readFileSync(path.join(root,'tests/supabase-transaction.sql'),'utf8'));
   await db.exec(fs.readFileSync(path.join(root,'tests/security-rls.sql'),'utf8'));
   await db.exec(`

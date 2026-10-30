@@ -43,9 +43,9 @@ Deno.serve(async (request: Request) => {
     if(!Number.isFinite(elapsed)||Number(body?.replay?.ticks)/Number(challenge.fps)>elapsed+4)return response(400,{error:'Invalid game timing'});
     let result: any;
     try{result=replay.simulate(challenge,body.replay)}catch{return response(400,{error:'Invalid game replay'})}
-    const saved=await fetch(`${project}/rest/v1/rpc/apply_verified_run`,{
+    const saved=await fetch(`${project}/rest/v1/rpc/apply_verified_run_v2`,{
       method:'POST',headers:{apikey:serverKey,authorization:`Bearer ${serverKey}`,'Content-Type':'application/json'},
-      body:JSON.stringify({run_id:body.run_id,player_id:user.id,tick_count:result.ticks,score_value:result.score,candy_value:result.candy,finished:result.dead})
+      body:JSON.stringify({run_id:body.run_id,player_id:user.id,tick_count:result.ticks,score_value:result.score,candy_value:result.candy,finished:result.dead,ghost_found:result.ghostCollected})
     });
     if(!saved.ok)return response(409,{error:'Could not save the verified game'});
     return response(200,await saved.json());

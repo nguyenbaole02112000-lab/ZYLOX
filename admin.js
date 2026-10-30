@@ -23,6 +23,7 @@
   async function refresh(){
     state={is_admin:false,enabled:false,owned:['Bat']};
     if(root.ZyloxAccount?.isOfflineGuest && root.ZyloxAccount.guestOwnsWitch())state.owned.push('Witch');
+    if(root.ZyloxAccount?.isOfflineGuest && root.ZyloxAccount.guestGhostState().claimed)state.owned.push('Ghost');
     if(root.ZyloxAccount?.isOnline){
       try{
         const [admin,owned]=await Promise.all([root.BaoCloud.rpc('admin_state'),root.BaoCloud.client.from('player_entities').select('entity_id')]);

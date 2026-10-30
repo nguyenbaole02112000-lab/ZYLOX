@@ -7,10 +7,13 @@ const game = fs.readFileSync(path.join(root, 'halloween.html'), 'utf8').match(/<
 const replay = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-replay.js'), 'utf8'), replay);
 assert.notEqual(replay.BaoReplay.random(0)(),0,'zero seed must not produce a permanently constant random sequence');
+assert.equal(replay.BaoReplay.ghostChance(1),.02);assert.equal(replay.BaoReplay.ghostChance(2),.04);assert.equal(replay.BaoReplay.ghostChance(50),1);assert.equal(replay.BaoReplay.ghostChance(100),1);
+let exercisedGhostCollection=false;
 
 for (const entity of ['Bat', 'Witch', 'Ghost']) {
 for (const fps of [60, 90, 120]) {
   for (const difficulty of ['Easy', 'Medium', 'Hard', 'Extreme', 'Nightmare']) {
+   for (const withGhost of entity==='Witch'&&difficulty==='Nightmare'?[false,true]:[false]) {
     const math = Object.create(Math);
     math.random = replay.BaoReplay.random(12345);
     let candy = 0;
@@ -35,7 +38,8 @@ for (const fps of [60, 90, 120]) {
     const scope = vm.createContext({ document, window, localStorage, Math: math, performance: { now: () => 0 }, requestAnimationFrame() {}, Number, Array });
     vm.runInContext(game, scope);
     scope.effectSeed = replay.BaoReplay.random((12345^0x5bd1e995)>>>0);
-    vm.runInContext('effectRandom=effectSeed;resetGame();cr.vy=-10', scope);
+    scope.ghostSeed=replay.BaoReplay.random((12345^0x31a63f09)>>>0);scope.eligibleGhost=withGhost;
+    vm.runInContext('effectRandom=effectSeed;ghostRandom=ghostSeed;ghostEligible=eligibleGhost;resetGame();cr.vy=-10', scope);
     const flaps = [], resizes = [];
     let ticks = 0, dead = false;
     for (let tick = 0; tick < fps * 90; tick++) {
@@ -51,11 +55,16 @@ for (const fps of [60, 90, 120]) {
       if (vm.runInContext("state==='gameover'", scope)) { dead = true; break; }
     }
     const score = vm.runInContext('score', scope);
-    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween' }, { mechanics: 2, ticks, flaps, resizes });
+    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween',ghost_eligible:withGhost }, { mechanics: 3, ticks, flaps, resizes });
     assert.deepEqual({ score: result.score, candy: result.candy, dead: result.dead }, { score, candy, dead }, `${difficulty} ${fps} FPS`);
+    assert.equal(result.ghostCollected,vm.runInContext('ghostCollected',scope),`Ghost collection ${fps} FPS`);
+    if(withGhost&&result.ghostCollected)exercisedGhostCollection=true;
+    if(withGhost){assert.ok(vm.runInContext('(()=>{gameplayRandom=()=>0;ghostRandom=()=>0;ghostEligible=true;ghostCollected=false;gapNumber=0;const p=makePipe(1,100);return p.ghost&&!p.candy})()',scope),'Ghost and Candy must not spawn in the same gap')}
     console.log(`${entity} / ${difficulty} / ${fps} FPS: ${ticks} ticks, ${score} score, ${candy} Candy verified`);
+  }
   }
 }
 }
 
+assert.ok(exercisedGhostCollection,'eligible Witch replay must actually collect a Ghost Token in this test');
 assert.throws(() => replay.BaoReplay.simulate({ difficulty: 'Easy', fps: 60, width: 960, seed: 1, entity: 'Bat', map: 'Halloween' }, { ticks: 10, flaps: [15], resizes: [] }), /Invalid flap/);

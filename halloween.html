@@ -17,7 +17,7 @@
 <div id="gameHint" role="status"><strong>Ready to fly?</strong>Press Space or ↑, or click / tap to start and flap.</div>
 <div id="milestoneHUD">SCORE: 0</div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
-</div><script src="game-replay.js"></script><script src="entity-art.js"></script><script>
+</div><script src="game-replay.js?v=ghost-weekly-1"></script><script src="entity-art.js"></script><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
 function saveBest(m,d,v){window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
@@ -37,12 +37,12 @@ const milestoneEl=document.getElementById('milestoneHUD');
 milestoneEl.textContent='SCORE: '+best;
 const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),BH=540,PW=60,PD=480,GRAV=.7,FLP=-10;
 let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0,gameplayRandom=Math.random,effectRandom=Math.random,onlineRun=null;
-let entity=localStorage.getItem('zylox_entity')||'Bat',doubleNotice=0;
+let entity=localStorage.getItem('zylox_entity')||'Bat',doubleNotice=0,ghostEligible=false,ghostCollected=false,ghostRandom=Math.random,gapNumber=0;
 const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
 function candyTotal(){const saved=window.ZyloxAccount?.getCandy()||0;return saved+(onlineRun&&!onlineRun.admin?Math.max(0,onlineRun.collectedCandy-onlineRun.syncedCandy):0)}
 function addCandy(){if(onlineRun?.admin)return;if(onlineRun)onlineRun.collectedCandy++;window.ZyloxAccount?.addCandy()}
 window.BaoRunSynced=run=>{if(onlineRun?.id===run.id&&Number.isSafeInteger(run.collectedCandy))onlineRun.syncedCandy=Math.max(onlineRun.syncedCandy,run.collectedCandy)};
-function makePipe(x,topHeight){return {x,topHeight,scored:false,candy:mapName==='Halloween'&&gameplayRandom()<cfg.candyChance}}
+function makePipe(x,topHeight){const candySpawn=mapName==='Halloween'&&gameplayRandom()<cfg.candyChance;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<Math.min(1,gapNumber*.02);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}}
 let isFlapping = false;
 function drawBatWings(x, y) {
   ctx.save();ctx.translate(x + 7, y - 3);ctx.rotate(86 * Math.PI / 180); 
@@ -125,10 +125,10 @@ function resizeCanvas(){
   if(state==='playing'&&pipes.length>0){let lp=pipes[pipes.length-1];while(lp.x<W+PD){const th=getNextPipeTop(lp.topHeight);const np=makePipe(lp.x+PD,th);pipes.push(np);lp=np;}}
 }
 window.addEventListener('resize',resizeCanvas);resizeCanvas();
-function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];cr.y=H/2;cr.vy=0;cr.rot=0;pipes.push(makePipe(W,(H-PG)/2));}
+function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];gapNumber=0;ghostCollected=false;cr.y=H/2;cr.vy=0;cr.rot=0;pipes.push(makePipe(W,(H-PG)/2));}
 async function beginGame(){
   if(state==='starting')return;
-  onlineRun=null;gameplayRandom=Math.random;
+  onlineRun=null;gameplayRandom=Math.random;ghostRandom=Math.random;ghostEligible=false;
   if(window.ZyloxAccount?.isOnline){
     state='starting';const width=W,requestStarted=performance.now();
     try{
@@ -139,10 +139,11 @@ async function beginGame(){
       const safeRemaining=cutoff-serverNow-(performance.now()-requestStarted)-1500;
       if(!challenge.admin_mode&&safeRemaining<=0)throw Error('Daily quests are resetting. Please try again shortly.');
       onlineRun={id:challenge.id,owner:window.ZyloxAccount.account.id,admin:challenge.admin_mode,collectedCandy:0,syncedCandy:0,
-        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{ticks:0,flaps:[],resizes:[]}};
-      gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);window.BaoRuns.notice('');
+        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{mechanics:3,ticks:0,flaps:[],resizes:[]}};
+      gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);ghostRandom=window.BaoReplay.random((challenge.seed^0x31a63f09)>>>0);ghostEligible=!!challenge.ghost_eligible&&!challenge.admin_mode&&entity==='Witch'&&diffName==='Nightmare';window.BaoRuns.notice('');
     }catch(error){state='ready';window.BaoRuns?.notice(error.message||'Unable to start an online game.');return}
   }
+  if(window.ZyloxAccount?.isOfflineGuest){const ghost=window.ZyloxAccount.guestGhostState();ghostEligible=ghost.purchased&&!ghost.found&&!ghost.claimed&&entity==='Witch'&&diffName==='Nightmare';}
   resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap');
 }
 function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'||state==='gameover')beginGame();else if(state==='playing'){if(onlineRun&&!onlineRun.admin&&onlineRun.replay.flaps.at(-1)!==onlineRun.replay.ticks)onlineRun.replay.flaps.push(onlineRun.replay.ticks);cr.vy=FLP;window.ZyloxSound?.play('flap')}}
@@ -158,6 +159,7 @@ function update(step){
     if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best&&!onlineRun?.admin){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='SCORE: '+best;}}
     if(entity!=='Ghost'&&cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
     if(entity==='Ghost'&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2+60))<cr.r+12)gameOver();
+    if(state==='playing'&&p.ghost&&!ghostCollected&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.ghost=false;ghostCollected=true;if(onlineRun&&!onlineRun.admin)onlineRun.ghostPending=true;if(window.ZyloxAccount?.isOfflineGuest)window.ZyloxAccount.findGuestGhost();window.ZyloxSound?.play('candy');}
     if(state==='playing'&&p.candy&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.candy=false;addCandy();if(entity==='Witch'&&effectRandom()<.5){addCandy();addCandy();doubleNotice=90}window.ZyloxSound?.play('candy');}
   }
   pipes=pipes.filter(p=>p.x+PW>0);
@@ -173,9 +175,10 @@ function drawCandy(p){
   ctx.fillStyle='#f95a93';ctx.beginPath();ctx.ellipse(0,0,11,9,0,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle='#fff1c2';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-4,-7);ctx.lineTo(3,7);ctx.moveTo(2,-8);ctx.lineTo(8,4);ctx.stroke();ctx.restore();
 }
+function drawGhostToken(p){const x=p.x+PW/2,y=p.topHeight+PG/2;ctx.save();ctx.translate(x,y);ctx.fillStyle='#352052';ctx.strokeStyle='#d4bdff';ctx.lineWidth=3;ctx.shadowColor='#a66dff';ctx.shadowBlur=14;ctx.beginPath();ctx.arc(0,0,16,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.shadowBlur=0;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='20px sans-serif';ctx.fillText('👻',0,1);ctx.restore()}
 function render(){
   document.getElementById('gameHint').hidden=state!=='ready';
-  drawBackground();pipes.forEach(p=>{drawPipe(p);if(p.candy)drawCandy(p)});if(state!=='gameover')drawCreature();
+  drawBackground();pipes.forEach(p=>{drawPipe(p);if(p.candy)drawCandy(p);if(p.ghost&&!ghostCollected)drawGhostToken(p)});if(state!=='gameover')drawCreature();
   parts.forEach(p=>{ctx.globalAlpha=p.life/40;ctx.fillStyle=p.color;ctx.shadowBlur = 10;ctx.shadowColor = p.color;ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;ctx.shadowBlur=0;
   ctx.fillStyle='#ff3b3b';ctx.shadowBlur = 15;ctx.shadowColor = '#ff3b3b';ctx.font='bold 48px Arial';ctx.textAlign='center';ctx.fillText(score,W/2,80);ctx.shadowBlur=0;
   ctx.fillStyle='#ffc764';ctx.font='bold 20px Arial';ctx.textAlign='right';ctx.fillText('Candy: '+candyTotal(),W-24,H-20);
@@ -212,7 +215,7 @@ function gameLoop(timestamp){
   const deltaTime = Math.min(timestamp - lastTimestamp, 250);lastTimestamp = timestamp;accumulator += deltaTime;
   flapTimer += deltaTime;if (flapTimer >= 200) {isFlapping = !isFlapping; flapTimer = 0;}
   endRunAtReset();
-  while(accumulator + 1e-7 >= PHYSICS_INTERVAL){endRunAtReset();const wasPlaying=state==='playing';update(PHYSICS_STEP);if(wasPlaying&&onlineRun&&!onlineRun.admin){onlineRun.replay.ticks++;if(state==='gameover'||onlineRun.replay.ticks%(physicsFPS*5)===0)window.BaoRuns?.save(onlineRun)}accumulator -= PHYSICS_INTERVAL;}
+  while(accumulator + 1e-7 >= PHYSICS_INTERVAL){endRunAtReset();const wasPlaying=state==='playing';update(PHYSICS_STEP);if(wasPlaying&&onlineRun&&!onlineRun.admin){onlineRun.replay.ticks++;if(state==='gameover'||onlineRun.ghostPending||onlineRun.replay.ticks%(physicsFPS*5)===0){onlineRun.ghostPending=false;window.BaoRuns?.save(onlineRun)}}accumulator -= PHYSICS_INTERVAL;}
   if(RENDER_INTERVAL === 0 || timestamp - lastRenderTime + 1e-7 >= RENDER_INTERVAL){
     render();if(previousRenderTime)updateFPSCounter(timestamp - previousRenderTime);previousRenderTime = timestamp;
     lastRenderTime = RENDER_INTERVAL === 0 ? timestamp : lastRenderTime + Math.floor((timestamp - lastRenderTime + 1e-7) / RENDER_INTERVAL) * RENDER_INTERVAL;
@@ -224,4 +227,4 @@ function exitToLobby(){if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlin
 window.addEventListener('pagehide',()=>{if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='SCORE: '+best});
-</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=online-1"></script><script src="online-runs.js"></script></body></html>
+</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-weekly-1"></script></body></html>

@@ -14,7 +14,7 @@
   }
   function save(run) {
     if (!run || run.admin || run.replay.ticks < 1) return;
-    const snapshot = { ...run, replay: { mechanics: 2, ticks: run.replay.ticks,
+    const snapshot = { ...run, replay: { mechanics: run.replay.mechanics === 3 ? 3 : 2, ticks: run.replay.ticks,
       flaps: run.replay.flaps.filter(tick => tick < run.replay.ticks),
       resizes: run.replay.resizes.filter(event => event[0] < run.replay.ticks) } };
     try { localStorage.setItem(prefix + run.owner + '_' + run.id, JSON.stringify(snapshot)); }
