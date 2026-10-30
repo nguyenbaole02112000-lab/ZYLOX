@@ -88,7 +88,8 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.getByRole('button',{name:/Mythical Ghost Quest/}).click();
     assert.match(await page.locator('#questView').innerText(),/Progress: 0\/2/);
     assert.match(await page.locator('.special-child').innerText(),/○ Purchase Ghost Token from the One-Time Shop · 0\/1/);
-    assert.match(await page.locator('.special-child').innerText(),/○ Obtain Ghost Token using Witch in Halloween Nightmare · 0\/1 · Locked/);
+    assert.match(await page.locator('.special-child').innerText(),/○ Use Witch to get the Ghost Token in Nightmare Halloween · 0\/1 · Locked/);
+    assert.match(await page.locator('.special-child').innerText(),/The token in the map is separate from the token purchased in the Shop/);
     await page.locator('.quest-filter').getByRole('button',{name:'Claimed',exact:true}).click();
     assert.match(await page.locator('#questView').innerText(),/No quests in this filter/);
     assert.equal(await page.locator('#questView').getByText('Reset in').count(),0);
@@ -117,14 +118,14 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.getByRole('button',{name:/Quests/}).click();await page.getByRole('button',{name:'Special'}).click();
     assert.match(await page.locator('#questView').innerText(),/Progress: 1\/2/);
     assert.match(await page.locator('.special-child').innerText(),/✓ Purchase Ghost Token from the One-Time Shop · 1\/1/);
-    assert.match(await page.locator('.special-child').innerText(),/○ Obtain Ghost Token using Witch in Halloween Nightmare · 0\/1/);
+    assert.match(await page.locator('.special-child').innerText(),/○ Use Witch to get the Ghost Token in Nightmare Halloween · 0\/1/);
     assert.equal(await page.locator('.special-child').getByText('Locked').count(),0);
     assert.ok(await page.locator('#questView').getByRole('button',{name:'Claim',exact:true}).isDisabled());
     await page.locator('#questView').getByRole('button',{name:'← Back'}).click();
     await page.evaluate(()=>localStorage.setItem('mock-ghost','found'));
     await page.getByRole('button',{name:/Quests/}).click();await page.getByRole('button',{name:'Special'}).click();
     assert.match(await page.locator('#questView').innerText(),/Progress: 2\/2/);
-    assert.match(await page.locator('.special-child').innerText(),/✓ Obtain Ghost Token using Witch in Halloween Nightmare · 1\/1/);
+    assert.match(await page.locator('.special-child').innerText(),/✓ Use Witch to get the Ghost Token in Nightmare Halloween · 1\/1/);
     await page.getByRole('button',{name:'Claim',exact:true}).click();
     await page.waitForFunction(()=>calls.some(c=>c[0]==='claim_ghost_quest'));
     await page.waitForFunction(()=>document.querySelector('#questView')?.innerText.includes('Claimed'));
