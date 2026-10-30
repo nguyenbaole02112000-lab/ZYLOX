@@ -30,12 +30,12 @@
   const elem=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e};
   const action=(text,fn)=>{const b=elem('button','online-action',text);b.type='button';b.addEventListener('click',fn);return b};
   const message=error=>error?.message||'Unable to load data. Please try again.';
-  function quantityControl(input,maxValue){
+  function quantityControl(input,maxValue,shortcutsDisabled=false){
     const wrapper=elem('div','shop-quantity'),stack=elem('div','shop-quantity-stack');
     const setValue=value=>{input.value=String(value);input.dispatchEvent(new Event('input',{bubbles:true}))};
     const maximum=action('Max',()=>setValue(Math.max(0,Math.floor(maxValue())))),minimum=action('Min',()=>setValue(1));
     maximum.className=minimum.className='shop-quantity-shortcut';maximum.setAttribute('aria-label',`Max ${input.getAttribute('aria-label')}`);minimum.setAttribute('aria-label',`Min ${input.getAttribute('aria-label')}`);
-    const setLocked=locked=>{input.disabled=maximum.disabled=minimum.disabled=locked};setLocked(input.disabled);
+    const setLocked=locked=>{input.disabled=locked;maximum.disabled=minimum.disabled=locked||shortcutsDisabled};setLocked(input.disabled);
     stack.append(maximum,input,minimum);wrapper.append(elem('span','','Qty'),stack);return {element:wrapper,setLocked};
   }
 
@@ -145,7 +145,7 @@
           let pending=null;try{pending=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
           const group=elem('div','shop-purchase');
           const quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,item.daily_limit-item.purchased));quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label',`Quantity for ${item.candy_amount} Candy exchange`);
-          const control=quantityControl(quantity,()=>Math.min(Math.max(0,item.daily_limit-item.purchased),Math.floor(Number(data.coin)/item.coin_price)));
+          const control=quantityControl(quantity,()=>Math.min(Math.max(0,item.daily_limit-item.purchased),Math.floor(Number(data.coin)/item.coin_price)),item.purchased>=item.daily_limit);
           const total=elem('small');const updateTotal=()=>{const n=quantity.valueAsNumber;total.textContent=Number.isInteger(n)&&n>0?`Total: ${n*item.coin_price} Coin → ${n*item.candy_amount} Candy`:''};quantity.addEventListener('input',updateTotal);updateTotal();details.appendChild(total);
           const button=action('Exchange',async()=>{
             button.disabled=true;ui.status.textContent='Processing...';

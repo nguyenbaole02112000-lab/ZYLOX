@@ -130,8 +130,16 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.getByText('Shop',{exact:true}).click();
     await forward.getByRole('button',{name:'Max Quantity for 5 Candy exchange'}).click();assert.equal(await forwardQty.inputValue(),'1');
     await page.locator('#shopView').getByRole('button',{name:'← Back'}).click();
+    await page.evaluate(()=>localStorage.setItem('mock-exchange','10'));
+    await page.getByText('Shop',{exact:true}).click();
+    assert.ok(await forward.getByRole('button',{name:'Max Quantity for 5 Candy exchange'}).isDisabled());
+    assert.ok(await forward.getByRole('button',{name:'Min Quantity for 5 Candy exchange'}).isDisabled());
+    assert.ok(await page.getByRole('button',{name:'Max Candy amount to exchange for Coin'}).isEnabled());
+    await page.locator('#shopView').getByRole('button',{name:'← Back'}).click();
     await page.evaluate(()=>{localStorage.setItem('mock-exchange','3');localStorage.removeItem('mock-coin-start')});
     await page.getByText('Shop',{exact:true}).click();
+    assert.ok(await forward.getByRole('button',{name:'Max Quantity for 5 Candy exchange'}).isEnabled());
+    assert.ok(await forward.getByRole('button',{name:'Min Quantity for 5 Candy exchange'}).isEnabled());
     const reverse=page.locator('#shopView .online-row').filter({hasText:'2 Coin'});
     assert.doesNotMatch(await reverse.innerText(),/remaining|limit/i);
     await reverse.getByRole('button',{name:'Max Candy amount to exchange for Coin'}).click();assert.equal(await reverse.getByRole('spinbutton').inputValue(),'800');
