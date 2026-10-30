@@ -17,7 +17,7 @@
 <div id="gameHint" role="status"><strong>Ready to fly?</strong>Press Space or ↑, or click / tap to start and flap.</div>
 <div id="milestoneHUD">SCORE: 0</div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
-</div><script src="game-replay.js?v=ghost-weekly-1"></script><script src="entity-art.js"></script><script>
+</div><script src="game-replay.js?v=ghost-chance-1"></script><script src="entity-art.js"></script><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
 function saveBest(m,d,v){window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
@@ -42,7 +42,7 @@ const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
 function candyTotal(){const saved=window.ZyloxAccount?.getCandy()||0;return saved+(onlineRun&&!onlineRun.admin?Math.max(0,onlineRun.collectedCandy-onlineRun.syncedCandy):0)}
 function addCandy(){if(onlineRun?.admin)return;if(onlineRun)onlineRun.collectedCandy++;window.ZyloxAccount?.addCandy()}
 window.BaoRunSynced=run=>{if(onlineRun?.id===run.id&&Number.isSafeInteger(run.collectedCandy))onlineRun.syncedCandy=Math.max(onlineRun.syncedCandy,run.collectedCandy)};
-function makePipe(x,topHeight){const candySpawn=mapName==='Halloween'&&gameplayRandom()<cfg.candyChance;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<Math.min(1,gapNumber*.02);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}}
+function makePipe(x,topHeight){const candySpawn=mapName==='Halloween'&&gameplayRandom()<cfg.candyChance;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<Math.min(1,gapNumber*.01);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}}
 let isFlapping = false;
 function drawBatWings(x, y) {
   ctx.save();ctx.translate(x + 7, y - 3);ctx.rotate(86 * Math.PI / 180); 
@@ -139,7 +139,7 @@ async function beginGame(){
       const safeRemaining=cutoff-serverNow-(performance.now()-requestStarted)-1500;
       if(!challenge.admin_mode&&safeRemaining<=0)throw Error('Daily quests are resetting. Please try again shortly.');
       onlineRun={id:challenge.id,owner:window.ZyloxAccount.account.id,admin:challenge.admin_mode,collectedCandy:0,syncedCandy:0,
-        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{mechanics:3,ticks:0,flaps:[],resizes:[]}};
+        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{mechanics:4,ticks:0,flaps:[],resizes:[]}};
       gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);ghostRandom=window.BaoReplay.random((challenge.seed^0x31a63f09)>>>0);ghostEligible=!!challenge.ghost_eligible&&!challenge.admin_mode&&entity==='Witch'&&diffName==='Nightmare';window.BaoRuns.notice('');
     }catch(error){state='ready';window.BaoRuns?.notice(error.message||'Unable to start an online game.');return}
   }
@@ -227,4 +227,4 @@ function exitToLobby(){if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlin
 window.addEventListener('pagehide',()=>{if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='SCORE: '+best});
-</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-weekly-1"></script></body></html>
+</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-chance-1"></script></body></html>

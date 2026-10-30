@@ -7,7 +7,8 @@ const game = fs.readFileSync(path.join(root, 'halloween.html'), 'utf8').match(/<
 const replay = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-replay.js'), 'utf8'), replay);
 assert.notEqual(replay.BaoReplay.random(0)(),0,'zero seed must not produce a permanently constant random sequence');
-assert.equal(replay.BaoReplay.ghostChance(1),.02);assert.equal(replay.BaoReplay.ghostChance(2),.04);assert.equal(replay.BaoReplay.ghostChance(50),1);assert.equal(replay.BaoReplay.ghostChance(100),1);
+assert.equal(replay.BaoReplay.ghostChance(1),.01);assert.equal(replay.BaoReplay.ghostChance(2),.02);assert.equal(replay.BaoReplay.ghostChance(50),.5);assert.equal(replay.BaoReplay.ghostChance(100),1);assert.equal(replay.BaoReplay.ghostChance(101),1);
+assert.equal(replay.BaoReplay.ghostChance(1,3),.02);assert.equal(replay.BaoReplay.ghostChance(50,3),1);
 let exercisedGhostCollection=false;
 
 for (const entity of ['Bat', 'Witch', 'Ghost']) {
@@ -55,7 +56,7 @@ for (const fps of [60, 90, 120]) {
       if (vm.runInContext("state==='gameover'", scope)) { dead = true; break; }
     }
     const score = vm.runInContext('score', scope);
-    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween',ghost_eligible:withGhost }, { mechanics: 3, ticks, flaps, resizes });
+    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween',ghost_eligible:withGhost }, { mechanics: 4, ticks, flaps, resizes });
     assert.deepEqual({ score: result.score, candy: result.candy, dead: result.dead }, { score, candy, dead }, `${difficulty} ${fps} FPS`);
     assert.equal(result.ghostCollected,vm.runInContext('ghostCollected',scope),`Ghost collection ${fps} FPS`);
     if(withGhost&&result.ghostCollected)exercisedGhostCollection=true;

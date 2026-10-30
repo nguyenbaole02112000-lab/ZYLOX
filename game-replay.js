@@ -5,7 +5,7 @@
     let s=(seed>>>0)||0x6d2b79f5;
     return () => { s^=s<<13;s^=s>>>17;s^=s<<5;return (s>>>0)/4294967296; };
   }
-  function ghostChance(gapNumber){return Math.max(0,Math.min(1,Number(gapNumber)*.02))}
+  function ghostChance(gapNumber,mechanics=4){return Math.max(0,Math.min(1,Number(gapNumber)*(mechanics===3?.02:.01)))}
   function simulate(challenge, payload) {
     const cfg=modes[challenge.difficulty],fps=Number(challenge.fps),step=60/fps;
     if(!cfg||![60,90,120].includes(fps)||!['Bat','Witch','Ghost'].includes(challenge.entity)||challenge.map!=='Halloween')throw Error('Unsupported game session');
@@ -15,11 +15,11 @@
     if(flaps.some((n,i)=>!Number.isSafeInteger(n)||n<0||n>=payload.ticks||(i&&n<flaps[i-1])))throw Error('Invalid flap events');
     if(resizes.some((e,i)=>!Array.isArray(e)||e.length!==2||!Number.isSafeInteger(e[0])||e[0]<0||e[0]>=payload.ticks||!Number.isFinite(e[1])||e[1]<160||e[1]>3840||(i&&e[0]<resizes[i-1][0])))throw Error('Invalid resize events');
     const next=random(challenge.seed),effect=random((challenge.seed^0x5bd1e995)>>>0),gap=cfg.gap,PW=60,PD=480,H=540;
-    const ghostRandom=random((challenge.seed^0x31a63f09)>>>0),ghostEligible=payload.mechanics===3&&challenge.ghost_eligible===true&&challenge.entity==='Witch'&&challenge.difficulty==='Nightmare';
+    const ghostRandom=random((challenge.seed^0x31a63f09)>>>0),ghostEligible=(payload.mechanics===3||payload.mechanics===4)&&challenge.ghost_eligible===true&&challenge.entity==='Witch'&&challenge.difficulty==='Nightmare';
     let width=Number(challenge.width),frame=0,score=0,candy=0,dead=false,flapIndex=0,resizeIndex=0,gapNumber=0,ghostCollected=false;
     let player={x:120,y:H/2,r:14,vy:-10},pipes=[];
     const topFor=prev=>{let lo=60,hi=H-gap-60;if(prev!==undefined){lo=Math.max(lo,prev-50);hi=Math.min(hi,prev+220);if(lo>hi){lo=60;hi=H-gap-60}}return next()*(hi-lo)+lo};
-    const make=(x,topHeight)=>{const candySpawn=next()<cfg.candy;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<ghostChance(gapNumber);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}};
+    const make=(x,topHeight)=>{const candySpawn=next()<cfg.candy;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<ghostChance(gapNumber,payload.mechanics);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}};
     pipes.push(make(width,(H-gap)/2));
     let completedTicks=0;
     for(let tick=0;tick<payload.ticks;tick++) {

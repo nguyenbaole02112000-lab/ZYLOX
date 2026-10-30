@@ -24,5 +24,11 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
  refreshFail=false;await window.BaoRuns.sync();
  assert.equal(records[key],undefined,'successful verification clears only its own saved snapshot');
  assert.ok(refreshes>0);assert.equal(synced,1);assert.equal(sent.at(-1).id,'run-1');
+ failing=true;
+ for(const mechanics of [3,4]){
+   const next={id:'run-'+mechanics,owner:'owner-1',admin:false,replay:{mechanics,ticks:10,flaps:[],resizes:[]}};
+   window.BaoRuns.save(next);await flush();
+   assert.equal(JSON.parse(records['baofantasy_verified_run_owner-1_run-'+mechanics]).replay.mechanics,mechanics,'replay version must be preserved');
+ }
  console.log('Run sync passed: retry, account isolation and replay preservation');
 })().catch(error=>{console.error(error);process.exitCode=1});
