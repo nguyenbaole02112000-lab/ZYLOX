@@ -89,7 +89,7 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     assert.match(await page.locator('#questView').innerText(),/Progress: 0\/2/);
     assert.match(await page.locator('.special-child').innerText(),/○ Purchase Ghost Token from the One-Time Shop · 0\/1/);
     assert.match(await page.locator('.special-child').innerText(),/○ Use Witch to get the Ghost Token in Nightmare Halloween · 0\/1 · Locked/);
-    assert.match(await page.locator('.special-child').innerText(),/The token in the map is separate from the token purchased in the Shop/);
+    assert.match(await page.locator('.special-child').innerText(),/Complete the objectives in order/);
     await page.locator('.quest-filter').getByRole('button',{name:'Claimed',exact:true}).click();
     assert.match(await page.locator('#questView').innerText(),/No quests in this filter/);
     assert.equal(await page.locator('#questView').getByText('Reset in').count(),0);

@@ -212,7 +212,7 @@
         top.append(details,claim);const child=elem('div','special-child');child.hidden=!ghostExpanded;
         const purchaseStep=elem('div');purchaseStep.append(elem('span',purchased?'special-check':'',purchased?'✓ ':'○ '),document.createTextNode(`Purchase Ghost Token from the One-Time Shop · ${purchased?1:0}/1`));
         const collectStep=elem('div');collectStep.append(elem('span',found?'special-check':'',found?'✓ ':'○ '),document.createTextNode(`Use Witch to get the Ghost Token in Nightmare Halloween · ${found?1:0}/1${purchased?'':' · Locked'}`));
-        child.append(purchaseStep,collectStep,elem('small','','The token in the map is separate from the token purchased in the Shop.'));
+        child.append(purchaseStep,collectStep,elem('small','','Complete the objectives in order.'));
         card.append(top,child);ui.list.appendChild(card);
       }catch(error){if(seq===viewGeneration){ui.list.textContent='';ui.status.textContent=message(error)}}
       return;
