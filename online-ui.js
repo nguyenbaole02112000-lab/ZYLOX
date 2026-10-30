@@ -202,15 +202,17 @@
         if((questFilter==='claimed'&&!ghost.claimed)||(questFilter==='unclaimed'&&ghost.claimed)){ui.list.appendChild(elem('p','','No quests in this filter.'));return}
         const card=elem('div','online-row special-quest'+(ghost.claimed?' special-claimed':'')),top=elem('div','online-row'),details=elem('div');
         const titleButton=action(`${ghostExpanded?'▾':'▸'} Mythical Ghost Quest`,()=>{ghostExpanded=!ghostExpanded;child.hidden=!ghostExpanded;titleButton.textContent=`${ghostExpanded?'▾':'▸'} Mythical Ghost Quest`;titleButton.setAttribute('aria-expanded',String(ghostExpanded))});titleButton.className='special-title';titleButton.setAttribute('aria-expanded',String(ghostExpanded));
-        details.append(titleButton,elem('small','',`Progress: ${ghost.found?1:0}/1 · ${ghost.claimed?'Claimed':ghost.found?'Completed':'In Progress'}`),elem('small','online-reward','Reward: Ghost'));
+        const purchased=!!ghost.purchased,found=purchased&&!!ghost.found;
+        details.append(titleButton,elem('small','',`Progress: ${Number(purchased)+Number(found)}/2 · ${ghost.claimed?'Claimed':found?'Completed':'In Progress'}`),elem('small','online-reward','Reward: Ghost'));
         const claim=action(ghost.claimed?'Claimed':'Claim',async()=>{
           claim.disabled=true;ui.status.textContent='Claiming...';
           try{if(guest)window.ZyloxAccount.claimGuestGhost();else await cloud.rpc('claim_ghost_quest');await window.ZyloxAccount.refresh();await window.BaoAdmin?.refresh();if(questView.classList.contains('show')&&period==='special')showQuests()}
           catch(error){ui.status.textContent=message(error);claim.disabled=false}
-        });claim.disabled=!!ghost.claimed||!ghost.found;
+        });claim.disabled=!!ghost.claimed||!found;
         top.append(details,claim);const child=elem('div','special-child');child.hidden=!ghostExpanded;
-        const mark=elem('span',ghost.found?'special-check':'',ghost.found?'✓ ':'○ ');child.append(mark,document.createTextNode(`Collect Ghost Token as Witch in Nightmare · ${ghost.found?1:0}/1`));
-        if(!ghost.purchased)child.appendChild(elem('small','','Purchase Ghost Token in One-Time Shop first.'));
+        const purchaseStep=elem('div');purchaseStep.append(elem('span',purchased?'special-check':'',purchased?'✓ ':'○ '),document.createTextNode(`Purchase Ghost Token from the One-Time Shop · ${purchased?1:0}/1`));
+        const collectStep=elem('div');collectStep.append(elem('span',found?'special-check':'',found?'✓ ':'○ '),document.createTextNode(`Obtain Ghost Token using Witch in Halloween Nightmare · ${found?1:0}/1${purchased?'':' · Locked'}`));
+        child.append(purchaseStep,collectStep);
         card.append(top,child);ui.list.appendChild(card);
       }catch(error){if(seq===viewGeneration){ui.list.textContent='';ui.status.textContent=message(error)}}
       return;
