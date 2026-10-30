@@ -1,8 +1,8 @@
 (() => {
   const definitions = {
-    Bat: { rarity: 'Common', maps: 'HALLOWEEN · NIGHT', passive: 'Night Only', locked: false },
-    Witch: { rarity: 'Epic', maps: 'DAY · NIGHT', passive: 'Day & Night\n50% Chance for 3× Candy', locked: true },
-    Ghost: { rarity: 'Mythical', maps: 'NIGHT', passive: 'Phase Through Terrain\nNight Only\nSeal Vulnerability', locked: true }
+    Bat: { rarity: 'Common', maps: 'HALLOWEEN', passive: 'Night Only', locked: false },
+    Witch: { rarity: 'Epic', maps: 'HALLOWEEN', passive: 'Day & Night\n50% Chance for 3× Candy', locked: true },
+    Ghost: { rarity: 'Mythical', maps: 'HALLOWEEN', passive: 'Phase Through Terrain\nNight Only\nSeal Vulnerability', locked: true }
   };
   let selected = 'Bat';
   const model = document.getElementById('batModelCanvas');

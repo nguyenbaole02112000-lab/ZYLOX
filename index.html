@@ -21,6 +21,7 @@
 .time-select{display:flex;align-items:center;gap:1cqw;margin-bottom:1cqw;font-family:'Cinzel',serif;font-size:1.5cqw;font-weight:900;color:#e0c8ff;text-shadow:0 0 1cqw #8a5cff}
 .time-select button{border:0;background:none;color:#b794f6;font-size:1.6cqw;cursor:pointer}
 .time-select button:disabled{opacity:.25;cursor:default}
+.time-select[hidden]{display:none}
 .bg-easy{color:#6ee7a0;border-color:#6ee7a0;box-shadow:0 0 2cqw rgba(110,231,160,.4), inset 0 0 1cqw rgba(110,231,160,.2);text-shadow:0 0 1cqw #6ee7a0}
 .bg-medium{color:#ffd700;border-color:#ffd700;box-shadow:0 0 2cqw rgba(255,215,0,.4), inset 0 0 1cqw rgba(255,215,0,.2);text-shadow:0 0 1cqw #ffd700}
 .bg-hard{color:#ff6b6b;border-color:#ff6b6b;box-shadow:0 0 2cqw rgba(255,107,107,.4), inset 0 0 1cqw rgba(255,107,107,.2);text-shadow:0 0 1cqw #ff6b6b}
@@ -81,7 +82,7 @@
 <div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
 <div class="ui" id="lobby">
   <div class="tg"><div class="gn" id="mapTitle">HALLOWEEN</div></div>
-  <div class="time-select" aria-label="Map time">
+  <div class="time-select" id="timeSelect" aria-label="Map time" hidden>
     <button id="timePrev" type="button" onclick="changeMapTime(-1)" aria-label="Previous time">&lt;</button>
     <span id="mapTime">NIGHT</span>
     <button id="timeNext" type="button" onclick="changeMapTime(1)" aria-label="Next time">&gt;</button>
@@ -133,7 +134,7 @@ let equipTime=localStorage.getItem('zylox_time')||'Night';
 function currentMap(){return maps.find(m=>m.name===equipMap)||maps[0]}
 function normalizeMapTime(){const times=currentMap().times||['Day','Night'];if(!times.includes(equipTime))equipTime=times[0];localStorage.setItem('zylox_time',equipTime)}
 function entityFitsMap(map,time=equipTime){const m=maps.find(item=>item.name===map),entity=localStorage.getItem('zylox_entity');return !!m&&(m.times||['Day','Night']).includes(time)&&(entityMaps[entity]||[]).includes(map)&&(entityModes[entity]||[]).includes(time)}
-function updateMapTime(){normalizeMapTime();const times=currentMap().times||['Day','Night'],i=times.indexOf(equipTime);document.getElementById('mapTime').textContent=equipTime.toUpperCase();document.getElementById('timePrev').disabled=i===0;document.getElementById('timeNext').disabled=i===times.length-1}
+function updateMapTime(){normalizeMapTime();const times=currentMap().times||['Day','Night'],i=times.indexOf(equipTime);document.getElementById('timeSelect').hidden=times.length<=1;document.getElementById('mapTime').textContent=equipTime.toUpperCase();document.getElementById('timePrev').disabled=i===0;document.getElementById('timeNext').disabled=i===times.length-1}
 function changeMapTime(direction){const times=currentMap().times||['Day','Night'],i=times.indexOf(equipTime)+direction;if(i>=0&&i<times.length){equipTime=times[i];updateMapTime()}}
 function closeNotice(){document.getElementById('noticeOverlay').classList.remove('show')}
 function showNotice(title,message,actionLabel,action){

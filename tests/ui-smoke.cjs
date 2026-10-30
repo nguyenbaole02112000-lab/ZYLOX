@@ -40,6 +40,12 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
       return route.fulfill({status:200,contentType:types[ext]||'application/octet-stream',body:fs.readFileSync(filename)});
     });
     await page.goto('https://test.github.io/index.html');
+    assert.ok(await page.locator('#timeSelect').isHidden());
+    assert.equal(await page.evaluate(()=>localStorage.getItem('zylox_time')),'Night');
+    assert.equal(await page.evaluate(()=>entityFitsMap('Halloween','Day')),false);
+    assert.equal(await page.evaluate(()=>entityFitsMap('Halloween','Night')),true);
+    const multipleTimes=await page.evaluate(()=>{maps.push({name:'Test Map',times:['Day','Night']});equipMap='Test Map';updateMapTime();const shown=!document.getElementById('timeSelect').hidden;maps.pop();equipMap='Halloween';updateMapTime();return shown});
+    assert.equal(multipleTimes,true,'maps with day and night must retain the time selector');
     await page.waitForFunction(()=>document.querySelector('.la img').complete && document.querySelector('.la img').naturalWidth>0);
     await page.locator('.la').click();
     assert.ok(await page.locator('#feedbackOverlay').evaluate(el=>el.classList.contains('show')));
@@ -67,6 +73,13 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.getByRole('button',{name:'Admin Mode: ON'}).waitFor();
     await page.goto('https://test.github.io/setting.html');
     assert.equal(await page.locator('button.tab').filter({hasText:'Quests'}).locator('svg').count(),1);
+    await page.getByText('Entity',{exact:true}).click();
+    for(const entity of ['Bat','Witch','Ghost']){
+      await page.locator(`[data-entity="${entity}"]`).click();
+      assert.equal(await page.locator('.e-map-item').getAttribute('data-label'),'HALLOWEEN');
+    }
+    assert.match(await page.locator('.e-passive-content').innerText(),/Night Only/);
+    await page.locator('#entityView').getByRole('button',{name:'← Back'}).click();
     await page.getByText('Setting',{exact:true}).click();
     await page.locator('#physicsFPS').selectOption('120');
     await page.locator('#renderFPS').selectOption('0');
