@@ -11,13 +11,14 @@ window.BaoCloud={
     if(name==='admin_state')return {is_admin:localStorage.getItem('mock-admin')==='yes',enabled:localStorage.getItem('mock-admin-mode')==='yes'};
     if(name==='set_admin_mode'){localStorage.setItem('mock-admin-mode',args.desired?'yes':'no');return {is_admin:true,enabled:args.desired}};
     if(name==='quest_state')return {server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',quests:[{id:'d01',title:'Play a game',progress:1,target:1,reward:10,claimed:false}]};
-    if(name==='shop_state')return {coin:50-10*Number(localStorage.getItem('mock-exchange')||0),candy:localStorage.getItem('mock-ghost')?100:localStorage.getItem('mock-witch')==='yes'?600:800,server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:Number(localStorage.getItem('mock-exchange')||0)}]};
+    if(name==='shop_state')return {coin:50-10*Number(localStorage.getItem('mock-exchange')||0)+2*Number(localStorage.getItem('mock-reverse')||0),candy:(localStorage.getItem('mock-ghost')?100:localStorage.getItem('mock-witch')==='yes'?600:800)-Number(localStorage.getItem('mock-reverse')||0),server_time:'2026-10-29T00:00:00Z',reset_at:'2026-10-30T00:00:00Z',items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:Number(localStorage.getItem('mock-exchange')||0)}]};
     if(name==='claim_quests')return {reward_received:10};
     if(name==='purchase_witch'){localStorage.setItem('mock-witch','yes');return {owned:true,candy:50}};
     if(name==='ghost_state'){const state=localStorage.getItem('mock-ghost');return {purchased:!!state,found:state==='found'||state==='claimed',claimed:state==='claimed',owned:state==='claimed',price:500}};
     if(name==='purchase_ghost_token'){localStorage.setItem('mock-ghost','purchased');return {purchased:true}};
     if(name==='claim_ghost_quest'){localStorage.setItem('mock-ghost','claimed');return {claimed:true}};
     if(name==='exchange_candy_bulk'){localStorage.setItem('mock-exchange',String(args.quantity));return {coin:50-10*args.quantity}};
+    if(name==='exchange_coin'){localStorage.setItem('mock-reverse',String(args.quantity));return {coin:50-10*Number(localStorage.getItem('mock-exchange')||0)+2*args.quantity}};
     if(name==='start_game'){const now=Date.now();return {id:'test-run',seed:12345,admin_mode:false,started_at:new Date(now).toISOString(),server_time:new Date(now).toISOString(),quest_cutoff_at:new Date(now+86400000).toISOString()}};
     return {};
   },verifyRun:async(id,replay)=>{calls.push(['verifyRun',{id,replay}]);return {accepted:true}},client:{from:()=>({select:async()=>({data:[{entity_id:'Bat'},...(localStorage.getItem('mock-witch')==='yes'?[{entity_id:'Witch'}]:[])]})})}
@@ -111,11 +112,18 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     assert.match(await page.locator('#shopView').innerText(),/5 Candy/);
     await page.getByRole('spinbutton',{name:'Quantity for 5 Candy exchange'}).fill('3');
     await page.evaluate(()=>window.slowRefresh=true);
-    await page.getByRole('button',{name:'Exchange'}).click();
+    await page.locator('#shopView .online-row').filter({hasText:'5 Candy'}).getByRole('button',{name:'Exchange'}).click();
     await page.waitForFunction(()=>calls.some(c=>c[0]==='exchange_candy_bulk'&&c[1].quantity===3));
     assert.match(await page.locator('.shop-coin').innerText(),/20/);
     await page.waitForFunction(()=>document.querySelector('#shopView')?.innerText.includes('7 / 10 remaining'));
     await page.evaluate(()=>window.slowRefresh=false);
+    const reverse=page.locator('#shopView .online-row').filter({hasText:'2 Coin'});
+    assert.doesNotMatch(await reverse.innerText(),/remaining|limit/i);
+    await reverse.getByRole('spinbutton',{name:'Candy amount to exchange for Coin'}).fill('3');
+    assert.match(await reverse.innerText(),/3 Candy → 6 Coin/);
+    await reverse.getByRole('button',{name:'Exchange'}).click();
+    await page.waitForFunction(()=>calls.some(c=>c[0]==='exchange_coin'&&c[1].quantity===3));
+    await page.waitForFunction(()=>document.querySelector('.shop-coin')?.innerText.includes('26'));
     await page.getByRole('button',{name:'One-Time Shop'}).click();
     assert.equal(await page.getByRole('spinbutton',{name:'Quantity for Witch'}).getAttribute('max'),'1');
     await page.locator('#shopView .online-row').filter({hasText:'Witch'}).getByRole('button',{name:'Buy'}).click();

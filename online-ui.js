@@ -126,7 +126,7 @@
     for(const [key,label] of [['daily','Daily Shop'],['one-time','One-Time Shop']]){const tab=action(label,()=>{shopSection=key;showShop()});tab.className='online-tab'+(selected===key?' active':'');tabRow.appendChild(tab)}
     try{
       const now=Date.now(),nextDay=Math.floor((now+7*3600000)/86400000)*86400000+86400000-7*3600000;
-      const data=guest?{coin:0,candy:window.ZyloxAccount.getCandy(),items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:0}],server_time:new Date(now).toISOString(),reset_at:new Date(nextDay).toISOString()}:await cloud.rpc('shop_state');if(seq!==viewGeneration||!shopView.classList.contains('show'))return;
+      const data=guest?{coin:window.ZyloxAccount.getCoin(),candy:window.ZyloxAccount.getCandy(),items:[{id:'candy_5',candy_amount:5,coin_price:10,daily_limit:10,purchased:window.ZyloxAccount.guestShopState().purchased}],server_time:new Date(now).toISOString(),reset_at:new Date(nextDay).toISOString()}:await cloud.rpc('shop_state');if(seq!==viewGeneration||!shopView.classList.contains('show'))return;
       ui.list.replaceChildren();
       coins.textContent=`🪙 ${Number(data.coin||0).toLocaleString()}`;
       if(selected==='daily'){
@@ -136,23 +136,40 @@
           const key=`baofantasy_bulk_pending_${window.ZyloxAccount.account.id}_${item.id}`;
           let pending=null;try{pending=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
           const group=elem('div','shop-purchase'),label=elem('label','shop-quantity','Qty');
-          const quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,item.daily_limit-item.purchased));quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=guest||!!pending;quantity.setAttribute('aria-label',`Quantity for ${item.candy_amount} Candy exchange`);label.appendChild(quantity);
+          const quantity=elem('input');quantity.type='number';quantity.min='1';quantity.max=String(Math.max(1,item.daily_limit-item.purchased));quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label',`Quantity for ${item.candy_amount} Candy exchange`);label.appendChild(quantity);
           const total=elem('small');const updateTotal=()=>{const n=quantity.valueAsNumber;total.textContent=Number.isInteger(n)&&n>0?`Total: ${n*item.coin_price} Coin → ${n*item.candy_amount} Candy`:''};quantity.addEventListener('input',updateTotal);updateTotal();details.appendChild(total);
           const button=action('Exchange',async()=>{
             button.disabled=true;ui.status.textContent='Processing...';
             if(!pending){
               const count=quantity.valueAsNumber;
               if(!Number.isInteger(count)||count<1||count>item.daily_limit-item.purchased||count*item.coin_price>Number(data.coin)){ui.status.textContent='Enter a quantity within your Coins and the daily limit.';button.disabled=false;return}
+              if(guest){try{window.ZyloxAccount.exchangeGuestCoins(count);await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}catch(error){ui.status.textContent=message(error);button.disabled=false}return}
               if(!crypto.randomUUID){ui.status.textContent='Secure random IDs are unavailable.';button.disabled=false;return}
               pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));quantity.disabled=true;
             }
             try{const result=await cloud.rpc('exchange_candy_bulk',{item_key:item.id,quantity:pending.quantity,operation_id:pending.id});localStorage.removeItem(key);if(result&&Number.isFinite(Number(result.coin)))coins.textContent=`🪙 ${Number(result.coin).toLocaleString()}`;await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
             catch(error){if(/daily limit|not enough|unavailable|invalid exchange quantity/i.test(message(error))){localStorage.removeItem(key);pending=null;quantity.disabled=false}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
           });
-          button.disabled=guest||(!pending&&(Number(data.coin)<item.coin_price||item.purchased>=item.daily_limit));
-          if(guest)details.appendChild(elem('small','','Sign in to earn Coins and exchange.'));
+          button.disabled=!pending&&(Number(data.coin)<item.coin_price||item.purchased>=item.daily_limit);
           group.append(label,button);row.append(details,group);ui.list.appendChild(row);
         }
+        const row=elem('div','online-row'),details=elem('div');details.append(elem('strong','','🪙 2 Coin'),elem('small','','🍬 1 Candy'));
+        const key=`baofantasy_reverse_pending_${window.ZyloxAccount.account.id}`;let pending=null;if(!guest)try{pending=JSON.parse(localStorage.getItem(key)||'null')}catch(_){}
+        const group=elem('div','shop-purchase'),label=elem('label','shop-quantity','Qty'),quantity=elem('input');quantity.type='number';quantity.min='1';quantity.step='1';quantity.value=String(pending?.quantity||1);quantity.disabled=!!pending;quantity.setAttribute('aria-label','Candy amount to exchange for Coin');label.appendChild(quantity);
+        const total=elem('small');const updateTotal=()=>{const n=quantity.valueAsNumber;total.textContent=Number.isSafeInteger(n)&&n>0&&Number.isSafeInteger(n*2)?`Total: ${n} Candy → ${n*2} Coin`:''};quantity.addEventListener('input',updateTotal);updateTotal();details.appendChild(total);
+        const button=action('Exchange',async()=>{
+          button.disabled=true;ui.status.textContent='Processing...';
+          if(!pending){
+            const count=quantity.valueAsNumber;
+            if(!Number.isSafeInteger(count)||count<1||!Number.isSafeInteger(count*2)||count>Number(data.candy)){ui.status.textContent='Enter a valid amount within your Candy balance.';button.disabled=false;return}
+            if(guest){try{window.ZyloxAccount.exchangeGuestCandy(count);await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}catch(error){ui.status.textContent=message(error);button.disabled=false}return}
+            if(!crypto.randomUUID){ui.status.textContent='Secure random IDs are unavailable.';button.disabled=false;return}
+            pending={id:crypto.randomUUID(),quantity:count};localStorage.setItem(key,JSON.stringify(pending));quantity.disabled=true;
+          }
+          try{const result=await cloud.rpc('exchange_coin',{quantity:pending.quantity,operation_id:pending.id});localStorage.removeItem(key);if(result&&Number.isFinite(Number(result.coin)))coins.textContent=`🪙 ${Number(result.coin).toLocaleString()}`;await window.ZyloxAccount.refresh();if(shopView.classList.contains('show')&&shopSection===selected)showShop()}
+          catch(error){if(/not enough|invalid exchange quantity|balance is too large/i.test(message(error))){localStorage.removeItem(key);pending=null;quantity.disabled=false}if(shopView.classList.contains('show')&&shopSection===selected){ui.status.textContent=message(error);button.disabled=false}}
+        });
+        button.disabled=!pending&&Number(data.candy)<1;group.append(label,button);row.append(details,group);ui.list.appendChild(row);
         const reset=elem('span','online-reset');ui.footer.prepend(reset);countdown(reset,data.server_time,data.reset_at,showShop);
       }else{
         const ownedResult=guest?{data:window.ZyloxAccount.guestOwnsWitch()?[{entity_id:'Witch'}]:[]}:await cloud.client.from('player_entities').select('entity_id');

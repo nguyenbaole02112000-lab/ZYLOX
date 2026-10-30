@@ -10,14 +10,33 @@
   const offlineCandyPrefix = 'zylox_offline_candy_';
   const offlineWitchKey = 'baofantasy_offline_witch_owned';
   const offlineGhostKey = 'baofantasy_offline_ghost_quest';
+  const offlineEconomyKey = 'baofantasy_offline_economy';
   const offlineBestPrefix = 'zylox_offline_best_';
   const cloud = offlineAvailable ? window.BaoCloud : null;
   let offlineMode = false, cloudMode = false, offlineCandy = 0;
   function guestGhostState(){let state={};try{state=JSON.parse(localStorage.getItem(offlineGhostKey)||'{}')}catch(_){}return {purchased:!!state.purchased,found:!!state.found,claimed:!!state.claimed,owned:!!state.claimed,price:500}}
+  function guestEconomy(){let state={};try{state=JSON.parse(localStorage.getItem(offlineEconomyKey)||'{}')||{}}catch(_){}return {coin:Number.isSafeInteger(state.coin)&&state.coin>=0?state.coin:0,candyDelta:Number.isSafeInteger(state.candyDelta)?state.candyDelta:0,day:typeof state.day==='string'?state.day:'',used:Number.isSafeInteger(state.used)&&state.used>=0?state.used:0}}
+  const guestShopDay=()=>new Date(Date.now()+7*3600000).toISOString().slice(0,10);
+  function guestShopState(){const state=guestEconomy();return {coin:state.coin,purchased:state.day===guestShopDay()?state.used:0}}
   const countOfflineCandy = () => Math.max(0,Object.keys(localStorage).filter(key => key.startsWith(offlineCandyPrefix)).reduce((total, key) => {
     const value = Number(localStorage.getItem(key));
     return total + (Number.isSafeInteger(value) && value > 0 ? value : 0);
-  }, 0) - (localStorage.getItem(offlineWitchKey)==='1' ? 200 : 0) - (guestGhostState().purchased ? 500 : 0));
+  }, 0) - (localStorage.getItem(offlineWitchKey)==='1' ? 200 : 0) - (guestGhostState().purchased ? 500 : 0) + guestEconomy().candyDelta);
+  function exchangeGuestCandy(quantity){
+    if(!offlineMode||!account)throw new Error('Guest account required');
+    if(!Number.isSafeInteger(quantity)||quantity<1||!Number.isSafeInteger(quantity*2))throw new Error('Invalid exchange quantity');
+    const state=guestEconomy();if(countOfflineCandy()<quantity)throw new Error('Not enough Candy');
+    if(!Number.isSafeInteger(state.coin+quantity*2)||!Number.isSafeInteger(state.candyDelta-quantity))throw new Error('Balance is too large');
+    state.coin+=quantity*2;state.candyDelta-=quantity;localStorage.setItem(offlineEconomyKey,JSON.stringify(state));renderProgress();return {coin:state.coin,candy:countOfflineCandy()};
+  }
+  function exchangeGuestCoins(quantity){
+    if(!offlineMode||!account)throw new Error('Guest account required');
+    if(!Number.isInteger(quantity)||quantity<1)throw new Error('Invalid exchange quantity');
+    const state=guestEconomy(),day=guestShopDay();if(state.day!==day){state.day=day;state.used=0}
+    if(state.used+quantity>10)throw new Error('Daily limit reached');if(state.coin<quantity*10)throw new Error('Not enough Coins');
+    if(!Number.isSafeInteger(state.candyDelta+quantity*5))throw new Error('Balance is too large');
+    state.coin-=quantity*10;state.candyDelta+=quantity*5;state.used+=quantity;localStorage.setItem(offlineEconomyKey,JSON.stringify(state));renderProgress();return {coin:state.coin,candy:countOfflineCandy()};
+  }
   function purchaseGuestGhost(){
     if(!offlineMode||!account)throw new Error('Guest account required');
     if(guestGhostState().purchased)return guestGhostState();
@@ -278,7 +297,7 @@
       } catch (error) { setMessage(error.message); }
     };
   }
-  window.ZyloxAccount = { get ready() { return ready; }, get account() { return account; }, get isOnline(){return cloudMode}, get isOfflineGuest(){return offlineMode}, guestOwnsWitch(){return offlineMode&&localStorage.getItem(offlineWitchKey)==='1'}, purchaseGuestWitch,guestGhostState,purchaseGuestGhost,findGuestGhost,claimGuestGhost, showAccount, addCandy, saveBest, getCandy, getBest, getCoin(){return cloudMode?Number(serverProgress.coin)||0:0}, refresh:refreshProgress };
+  window.ZyloxAccount = { get ready() { return ready; }, get account() { return account; }, get isOnline(){return cloudMode}, get isOfflineGuest(){return offlineMode}, guestOwnsWitch(){return offlineMode&&localStorage.getItem(offlineWitchKey)==='1'}, purchaseGuestWitch,guestGhostState,purchaseGuestGhost,findGuestGhost,claimGuestGhost,guestShopState,exchangeGuestCandy,exchangeGuestCoins, showAccount, addCandy, saveBest, getCandy, getBest, getCoin(){return offlineMode?guestEconomy().coin:cloudMode?Number(serverProgress.coin)||0:0}, refresh:refreshProgress };
   const style = document.createElement('style');
   style.textContent = `.account-overlay{position:fixed;inset:0;z-index:99999;background:rgba(10,6,18,.96);display:flex;align-items:center;justify-content:center;color:#e0c8ff;font-family:'Segoe UI',sans-serif}.account-overlay[hidden]{display:none}.account-card{width:min(90vw,420px);max-height:90vh;overflow:auto;padding:22px;border:2px solid #6b4fa0;border-radius:14px;background:#1b1032;box-shadow:0 0 30px #6b4fa0}.account-card h2{text-align:center;color:#f7d51d;font-family:Cinzel,serif;margin:0 0 14px}.account-card form{display:grid;gap:8px;margin:10px 0}.account-card label{display:grid;gap:4px;font-weight:600;font-size:14px}.account-card input{padding:8px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:white;font:inherit}.account-card button{padding:8px 12px;border:1px solid #b794f6;border-radius:7px;background:#6b4fa0;color:#fff;cursor:pointer;font-weight:bold;margin:3px}.account-card>button{width:100%;margin:3px 0}.account-note,.account-message{font-size:12px;line-height:1.35;color:#d9c8ee}.account-message{color:#ffcd7a;min-height:1em}.account-actions{display:flex;justify-content:space-between}`;
   document.head.appendChild(style);
@@ -289,6 +308,7 @@
   window.addEventListener('focus', refreshProgress);
   window.addEventListener('storage', event => {
     if(offlineMode&&event.key===offlineGhostKey){renderProgress();window.BaoAdmin?.refresh();return}
+    if(offlineMode&&event.key===offlineEconomyKey){renderProgress();return}
     if (offlineMode && event.key && (event.key.startsWith(offlineCandyPrefix) || event.key.startsWith(offlineBestPrefix))) { if (event.key.startsWith(offlineCandyPrefix)) offlineCandy = countOfflineCandy(); renderProgress(); return; }
     if (account && event.key && event.key.startsWith(pendingPrefix())) {
       queue = readQueue(); renderProgress(); syncQueue();
