@@ -83,6 +83,9 @@
 .e-col-passive{width:28%}
 .e-col-model-wrap{width:42%;display:flex;flex-direction:column;gap:5px}
 .e-col-model{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;background:#000;border:2px solid #6b4fa0;border-radius:12px;position:relative;box-shadow:inset 0 0 30px #000;overflow:hidden}
+.e-col-model[data-rarity="common"]{background:radial-gradient(circle,#737982,#30343a);border-color:#9aa1aa}
+.e-col-model[data-rarity="epic"]{background:radial-gradient(circle,#9652bd,#392047);border-color:#bb7ad8}
+.e-col-model[data-rarity="mythical"]{background:radial-gradient(circle,#c45762,#4b2027);border-color:#ef8790}
 #batModelCanvas{position:absolute;width:74.074074vh;height:74.074074vh;max-width:none;pointer-events:none}
 .e-model-name{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#f7d51d;text-shadow:0 0 8px #f7d51d}
 .e-equip-btn{padding:4px 0;border:2px solid #fff;border-radius:30px;cursor:pointer;font-family:'Cinzel',serif;font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:#000;background:linear-gradient(180deg,#ffe600,#ffa500);box-shadow:0 0 15px rgba(247,213,29,.6);transition:all .2s}
@@ -173,7 +176,7 @@
         </div>
         <div class="e-panel e-col-passive">
           <div class="e-passive-title">Passive</div>
-          <div class="e-passive-content">Night Only</div>
+          <div class="e-passive-content">No passive</div>
         </div>
       </div>
       <div class="e-panel e-bottom">
@@ -379,4 +382,4 @@
   drawBatWings(batIconCtx, 0, 0);
   batIconCtx.restore();
 document.addEventListener('zylox-progress-updated',()=>{document.getElementById('inventoryCandy').textContent=window.ZyloxAccount?.getCandy()||0});
-</script><script src="entity-art.js"></script><script src="entities-preview.js?v=map-label-1"></script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=candy-coin-1"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-chance-1"></script><script src="online-ui.js?v=shop-quantity-2"></script></body></html>
+</script><script src="entity-art.js"></script><script src="witch-trial-art.js"></script><script src="bat-trial-art.js"></script><script src="entities-preview.js?v=map-label-1"></script><script src="music.js"></script><script>window.ZyloxMusic.subscribe(updateMusicView);</script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=email-notice-2"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-seals-5"></script><script src="online-ui.js?v=shop-quantity-2"></script></body></html>

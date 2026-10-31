@@ -1,8 +1,8 @@
 (() => {
   const definitions = {
-    Bat: { rarity: 'Common', maps: 'HALLOWEEN', passive: 'Night Only', locked: false },
-    Witch: { rarity: 'Epic', maps: 'HALLOWEEN', passive: 'Day & Night\n50% Chance for 3× Candy', locked: true },
-    Ghost: { rarity: 'Mythical', maps: 'HALLOWEEN', passive: 'Phase Through Terrain\nNight Only\nSeal Vulnerability', locked: true }
+    Bat: { rarity: 'Common', maps: 'HALLOWEEN', passive: 'No passive', locked: false },
+    Witch: { rarity: 'Epic', maps: 'HALLOWEEN', passive: '50% Chance for 3× Candy', locked: true },
+    Ghost: { rarity: 'Mythical', maps: 'HALLOWEEN', passive: 'Phase Through Terrain\nNight Only\nHalloween Seal Vulnerability', locked: true }
   };
   let selected = 'Bat';
   const model = document.getElementById('batModelCanvas');
@@ -14,7 +14,7 @@
   passive.style.whiteSpace = 'pre-line';
 
   function draw(c, entity, offset=0) {
-    if(entity==='Bat'){drawBatBody(c,0,0);drawBatWings(c,0,0)}
+    if(entity==='Bat'){if(!window.BaoTrialBat?.draw(c,true)){drawBatBody(c,0,0);drawBatWings(c,0,0)}}
     else if(entity==='Witch')BaoEntityArt.witch(c,offset);
     else BaoEntityArt.ghost(c,offset);
   }
@@ -22,12 +22,15 @@
     const canvas=document.getElementById(id),c=canvas.getContext('2d');
     c.clearRect(0,0,100,100);c.save();c.translate(50,50);c.scale(1.2,1.2);draw(c,entity);c.restore();
   }
+  document.addEventListener('bao-trial-bat-ready',()=>icon('batIconCanvas','Bat'));
+  document.addEventListener('bao-trial-witch-ready',()=>icon('witchIconCanvas','Witch'));
   icon('witchIconCanvas','Witch');icon('ghostIconCanvas','Ghost');
   function refresh() {
     const item=definitions[selected];
     const unlocked=(window.BaoAdmin?.state.owned||['Bat']).includes(selected);
     const usable=unlocked||!!window.BaoAdmin?.state.enabled;
     name.textContent=selected;
+    model.parentElement.dataset.rarity=item.rarity.toLowerCase();
     document.getElementById('entityRarity').textContent=item.rarity+' · '+(unlocked?'Unlocked':'Locked'+(usable?' · Admin Trial':''));
     passive.textContent=item.passive;map.dataset.label=item.maps;
     document.querySelectorAll('[data-entity]').forEach(slot=>slot.classList.toggle('active',slot.dataset.entity===selected));

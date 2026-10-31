@@ -233,6 +233,18 @@
   function setMessage(text) {
     message.textContent = text === '{}' ? 'The server did not respond. Please try again.' : (text || '');
   }
+  function showEmailConfirmationNotice(email) {
+    const card = overlay.querySelector('.account-card');
+    card.innerHTML = '<h2>Confirm Email</h2><p class="account-confirm-message" role="status">Please confirm email link to log in the game</p><button type="button" id="confirmationContinue">OK</button>';
+    const button = card.querySelector('#confirmationContinue');
+    button.onclick = () => {
+      showAuth('login');
+      const emailInput = overlay.querySelector('input[name="email"]');
+      if (emailInput) emailInput.value = email;
+      overlay.querySelector('input[name="password"]')?.focus();
+    };
+    button.focus();
+  }
   function showAuth(mode = 'signup') {
     ready = false; overlay.hidden = false;
     const isLogin = mode === 'login';
@@ -258,7 +270,7 @@
           if(isLogin)await cloud.login(email,password);
           else {
             const result=await cloud.signup(username,email,password);
-            if(!result.session){form.reset();setMessage('Check your email to confirm your account, then log in.');return}
+            if(!result.session){form.reset();showEmailConfirmationNotice(email);return}
           }
           form.reset();await activateCloud(await cloud.profile());
         } else {const result=await api(isLogin ? '/api/account/login' : '/api/account/signup', 'POST', { username, password });form.reset();await activate(result.account)}
@@ -300,6 +312,7 @@
   window.ZyloxAccount = { get ready() { return ready; }, get account() { return account; }, get isOnline(){return cloudMode}, get isOfflineGuest(){return offlineMode}, guestOwnsWitch(){return offlineMode&&localStorage.getItem(offlineWitchKey)==='1'}, purchaseGuestWitch,guestGhostState,purchaseGuestGhost,findGuestGhost,claimGuestGhost,guestShopState,exchangeGuestCandy,exchangeGuestCoins, showAccount, addCandy, saveBest, getCandy, getBest, getCoin(){return offlineMode?guestEconomy().coin:cloudMode?Number(serverProgress.coin)||0:0}, refresh:refreshProgress };
   const style = document.createElement('style');
   style.textContent = `.account-overlay{position:fixed;inset:0;z-index:99999;background:rgba(10,6,18,.96);display:flex;align-items:center;justify-content:center;color:#e0c8ff;font-family:'Segoe UI',sans-serif}.account-overlay[hidden]{display:none}.account-card{width:min(90vw,420px);max-height:90vh;overflow:auto;padding:22px;border:2px solid #6b4fa0;border-radius:14px;background:#1b1032;box-shadow:0 0 30px #6b4fa0}.account-card h2{text-align:center;color:#f7d51d;font-family:Cinzel,serif;margin:0 0 14px}.account-card form{display:grid;gap:8px;margin:10px 0}.account-card label{display:grid;gap:4px;font-weight:600;font-size:14px}.account-card input{padding:8px;border:1px solid #8a5cff;border-radius:6px;background:#0a0612;color:white;font:inherit}.account-card button{padding:8px 12px;border:1px solid #b794f6;border-radius:7px;background:#6b4fa0;color:#fff;cursor:pointer;font-weight:bold;margin:3px}.account-card>button{width:100%;margin:3px 0}.account-note,.account-message{font-size:12px;line-height:1.35;color:#d9c8ee}.account-message{color:#ffcd7a;min-height:1em}.account-actions{display:flex;justify-content:space-between}`;
+  style.textContent += '.account-confirm-message{text-align:center;color:#e0c8ff;font-size:18px;font-weight:700;line-height:1.5;margin:18px 0 22px}';
   document.head.appendChild(style);
   overlay = document.createElement('div'); overlay.className = 'account-overlay'; overlay.setAttribute('role','dialog'); overlay.setAttribute('aria-modal','true');
   overlay.innerHTML = '<div class="account-card"><h2>Connecting...</h2><p class="account-message" role="status"></p></div>';

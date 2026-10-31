@@ -33,6 +33,8 @@
 .pb:hover{filter:brightness(1.2);box-shadow:0 .5cqw 0 #4a2e7a,0 .8cqw 3cqw rgba(138,92,255,1)}
 .pb:active{transform:translateY(.4cqw);box-shadow:0 .1cqw 0 #4a2e7a,0 .4cqw 1cqw rgba(138,92,255,.5)}
 .brc{position:absolute;bottom:6cqw;right:4cqw;display:flex;flex-direction:column;align-items:center;gap:1.5cqw;z-index:10}
+.map-choice-label{border:0;background:transparent;color:#e0c8ff;font:900 1.5cqw 'Cinzel',serif;letter-spacing:.1em;text-shadow:0 0 1cqw #8a5cff;cursor:pointer;pointer-events:auto}
+.map-choice-label:hover{color:#fff;text-shadow:0 0 1.5cqw #b794f6}.map-choice-label:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .ms{display:flex;gap:1.5cqw;pointer-events:auto}
 .mi{position:relative;width:16cqw;aspect-ratio:16/9;border-radius:.8cqw;cursor:pointer;overflow:hidden;background:#140a24;border:.3cqw solid #6b4fa0;box-shadow:0 .6cqw 1.5cqw rgba(0,0,0,.8),0 0 1cqw rgba(138,92,255,.3);transition:transform .2s,filter .2s,box-shadow .2s}
 .mi img{width:100%;height:100%;object-fit:cover;display:block;opacity:.7;transition:opacity .2s}
@@ -47,6 +49,20 @@
 .la{position:absolute;top:3cqw;left:3cqw;z-index:11;cursor:pointer;transition:transform .2s}
 .la:hover{transform:scale(1.05);filter:drop-shadow(0 0 1.5cqw rgba(138,92,255,.8))}
 .la img{width:12cqw;height:auto;object-fit:contain;filter:drop-shadow(0 .5cqw 1cqw rgba(0,0,0,.8))}
+.update-log-open{position:absolute;top:12cqw;right:2cqw;z-index:12;display:flex;align-items:center;gap:.7cqw;padding:1cqw 1.4cqw;border:.2cqw solid #a77be4;border-radius:.8cqw;background:rgba(22,11,40,.92);color:#eee3ff;font-family:'Cinzel',serif;font-size:1.45cqw;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 1.4cqw #8154c866;white-space:nowrap}
+.update-log-open:hover{background:#3c245b;border-color:#e0c8ff}.update-log-open:focus-visible,.update-log-close:focus-visible,.update-log-item:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.update-log-overlay{position:absolute;inset:0;z-index:200;background:rgba(8,4,15,.34);backdrop-filter:blur(1px);display:flex;justify-content:center;align-items:center;padding:3cqw}.update-log-overlay[hidden]{display:none}
+.update-log-page{position:relative;width:46cqw;height:41cqw;max-height:90%;display:flex;flex-direction:column;background:radial-gradient(ellipse at top,#30204c,#140a24 75%);border:.2cqw solid #8b67bb;border-radius:1.2cqw;box-shadow:0 0 4cqw #7954bd80;overflow:hidden}
+.update-log-header{display:flex;align-items:center;justify-content:space-between;gap:1cqw;padding:1.6cqw 2cqw;border-bottom:1px solid #7953a1;background:#150b27aa}
+.update-log-header h1{font:900 2.5cqw 'Cinzel',serif;letter-spacing:.1em;color:#f7d51d;text-shadow:0 0 1cqw #f7d51d88}
+.update-log-close{padding:.6cqw 1.4cqw;border:1px solid #a27acb;border-radius:.7cqw;background:#43275e;color:#fff;font-weight:bold;font-size:1.3cqw;cursor:pointer}
+.update-log-body{display:flex;flex:1;min-height:0;gap:1.5cqw;padding:1.5cqw}
+.update-log-list{width:28%;min-width:0;overflow-y:auto;overscroll-behavior:contain;padding:.8cqw;border:1px solid #765399;border-radius:.8cqw;background:#0b0615a6;text-align:left}
+.update-log-list h2{padding:.5cqw .7cqw 1cqw;font:900 1.4cqw 'Cinzel',serif;color:#dec4ff}
+.update-log-item{display:block;width:100%;padding:1cqw;border:1px solid #9b73c7;border-radius:.6cqw;background:#513376;color:#fff;text-align:left;font-size:1.35cqw;font-weight:800;cursor:pointer}
+.update-log-detail{flex:1;min-width:0;overflow-y:auto;overscroll-behavior:contain;text-align:left;padding:2cqw 1.6cqw;border:1px solid #765399;border-radius:.8cqw;background:#0b0615a6}
+.update-log-detail h2{font:900 2.4cqw 'Cinzel',serif;color:#f7d51d;margin-bottom:1.5cqw}
+.update-log-detail ul{padding-left:1.7cqw;color:#e8d9ff;font-size:1.4cqw;line-height:1.9}.update-log-detail strong{color:#d6b3ff}
 .mpo{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:4cqw 0;opacity:0;pointer-events:none;transition:opacity .3s}
 .mpo.show{opacity:1;pointer-events:auto}
 .pbg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(10px) brightness(.3);z-index:-1;transition:background-image .3s}
@@ -79,6 +95,7 @@
 </style></head><body><div class="gc">
 <div class="bg" id="lobbyBg"></div><div class="ov"></div>
 <div class="la" onclick="openFeedback()"><img src="assets/bao-brand.png" alt="Lê Nguyễn Bảo"></div>
+<button class="update-log-open" id="updateLogOpen" type="button" aria-haspopup="dialog">UPDATE LOG</button>
 <div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
 <div class="ui" id="lobby">
   <div class="tg"><div class="gn" id="mapTitle">HALLOWEEN</div></div>
@@ -95,7 +112,7 @@
   <div class="bs">🏆 Milestone: <span class="num" id="bestScore">0</span></div>
   <button class="pb" onclick="startGame()">▶ Play</button>
 </div>
-<div class="brc" id="mapSelector"><div class="ms"><div class="mi active" data-map="Halloween" onclick="openMapPreview()"><img src="https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop" alt="Halloween"></div></div></div>
+<div class="brc" id="mapSelector"><button class="map-choice-label" type="button" onclick="openMapPreview()">CHOOSE MAP</button><div class="ms"><div class="mi active" data-map="Halloween" onclick="openMapPreview()"><img src="https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop" alt="Halloween"></div></div></div>
 <div class="mpo" id="mapPreview">
   <div class="pbg" id="previewBg"></div>
   <div class="ccb" onclick="closeMapPreview()"></div>
@@ -122,6 +139,15 @@
     <div class="fa"><button class="bsend" id="noticeAction"></button><button class="bsend" onclick="closeNotice()">Close</button></div>
   </div>
 </div>
+<div class="update-log-overlay" id="updateLogOverlay" role="dialog" aria-modal="true" aria-labelledby="updateLogTitle" hidden>
+  <div class="update-log-page">
+    <header class="update-log-header"><h1 id="updateLogTitle">UPDATE LOG</h1><button class="update-log-close" id="updateLogClose" type="button">CLOSE</button></header>
+    <div class="update-log-body">
+      <aside class="update-log-list"><h2>UPDATES</h2><div id="updateLogList"></div></aside>
+      <section class="update-log-detail" id="updateLogDetail" aria-live="polite"></section>
+    </div>
+  </div>
+</div>
 </div><script>
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
@@ -129,7 +155,7 @@ const diffs=[{name:'Easy',class:'bg-easy',icon:'🌱',speed:4},{name:'Medium',cl
 const maps=[{name:'Halloween',img:'https://images.unsplash.com/photo-1508361001413-7a9dca21d08a?q=80&w=1920&auto=format&fit=crop',avail:true,times:['Night']},{name:'Coming Soon',img:'https://uploads.onecompiler.io/4572fw7d6/457da9c3c/comingsoon.png',avail:false,times:['Day','Night']}];
 if(!localStorage.getItem('zylox_entity'))localStorage.setItem('zylox_entity','Bat');
 let diffIdx=Math.max(0,diffs.findIndex(d=>d.name===localStorage.getItem('zylox_diff'))),mapIdx=0,equipMap=localStorage.getItem('zylox_map')||'Halloween';
-const entityModes={Bat:['Night'],Witch:['Day','Night'],Ghost:['Night']},entityMaps={Bat:['Halloween'],Witch:['Halloween'],Ghost:['Halloween']};
+const entityModes={Bat:['Day','Night'],Witch:['Day','Night'],Ghost:['Night']},entityMaps={Bat:['Halloween'],Witch:['Halloween'],Ghost:['Halloween']};
 let equipTime=localStorage.getItem('zylox_time')||'Night';
 function currentMap(){return maps.find(m=>m.name===equipMap)||maps[0]}
 function normalizeMapTime(){const times=currentMap().times||['Day','Night'];if(!times.includes(equipTime))equipTime=times[0];localStorage.setItem('zylox_time',equipTime)}
@@ -143,7 +169,7 @@ function showNotice(title,message,actionLabel,action){
   const button=document.getElementById('noticeAction');button.textContent=actionLabel;button.onclick=action;
   document.getElementById('noticeOverlay').classList.add('show');
 }
-function showEntityNotice(){showNotice('Entity unavailable','This entity cannot be used on the selected map or time. Bat can only be used at Night. Please choose another entity or time.','Choose Entity',()=>{window.location.href='setting.html?view=entity'})}
+function showEntityNotice(){showNotice('Entity unavailable','This entity cannot be used on the selected map or time. Please choose another entity or time.','Choose Entity',()=>{window.location.href='setting.html?view=entity'})}
 if(!maps.some(m=>m.name===equipMap&&m.avail))equipMap='Halloween';
 function updateLobbyBg() {
   const currentMap = maps.find(m => m.name === equipMap);
@@ -171,4 +197,4 @@ function submitFeedback(){
 function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html?v=gameover-fix'}
 updateDiffUI();refreshLobby();
 document.addEventListener('zylox-progress-updated', refreshLobby);
-</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=candy-coin-1"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-chance-1"></script><script src="online-ui.js?v=shop-quantity-2"></script></body></html>
+</script><script src="update-log.js"></script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=email-notice-2"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-seals-5"></script><script src="online-ui.js?v=shop-quantity-2"></script></body></html>

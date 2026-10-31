@@ -6,6 +6,8 @@ const root = path.resolve(__dirname, '..');
 const game = fs.readFileSync(path.join(root, 'halloween.html'), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 const replay = {};
 vm.runInNewContext(fs.readFileSync(path.join(root, 'game-replay.js'), 'utf8'), replay);
+const seals = {};
+vm.runInNewContext(fs.readFileSync(path.join(root, 'ghost-seals.js'), 'utf8'), seals);
 assert.notEqual(replay.BaoReplay.random(0)(),0,'zero seed must not produce a permanently constant random sequence');
 assert.equal(replay.BaoReplay.ghostChance(1),.01);assert.equal(replay.BaoReplay.ghostChance(2),.02);assert.equal(replay.BaoReplay.ghostChance(50),.5);assert.equal(replay.BaoReplay.ghostChance(100),1);assert.equal(replay.BaoReplay.ghostChance(101),1);
 assert.equal(replay.BaoReplay.ghostChance(1,3),.02);assert.equal(replay.BaoReplay.ghostChance(50,3),1);
@@ -36,11 +38,11 @@ for (const fps of [60, 90, 120]) {
       addEventListener() {}, devicePixelRatio: 1, location: {},
       ZyloxAccount: { ready: true, getCandy: () => candy, getBest: () => 0, addCandy() { candy++; }, saveBest() {} }
     };
-    const scope = vm.createContext({ document, window, localStorage, Math: math, performance: { now: () => 0 }, requestAnimationFrame() {}, Number, Array });
+    const scope = vm.createContext({ document, window, location: { search: '' }, URLSearchParams, localStorage, BaoGhostSeals: seals.BaoGhostSeals, Math: math, performance: { now: () => 0 }, requestAnimationFrame() {}, Number, Array });
     vm.runInContext(game, scope);
     scope.effectSeed = replay.BaoReplay.random((12345^0x5bd1e995)>>>0);
-    scope.ghostSeed=replay.BaoReplay.random((12345^0x31a63f09)>>>0);scope.eligibleGhost=withGhost;
-    vm.runInContext('effectRandom=effectSeed;ghostRandom=ghostSeed;ghostEligible=eligibleGhost;resetGame();cr.vy=-10', scope);
+    scope.ghostSeed=replay.BaoReplay.random((12345^0x31a63f09)>>>0);scope.sealSeed=replay.BaoReplay.random((12345^0x51ea1a7)>>>0);scope.eligibleGhost=withGhost;
+    vm.runInContext('effectRandom=effectSeed;ghostRandom=ghostSeed;sealRandom=sealSeed;ghostEligible=eligibleGhost;resetGame();cr.vy=-10', scope);
     const flaps = [], resizes = [];
     let ticks = 0, dead = false;
     for (let tick = 0; tick < fps * 90; tick++) {
@@ -56,7 +58,7 @@ for (const fps of [60, 90, 120]) {
       if (vm.runInContext("state==='gameover'", scope)) { dead = true; break; }
     }
     const score = vm.runInContext('score', scope);
-    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween',ghost_eligible:withGhost }, { mechanics: 4, ticks, flaps, resizes });
+    const result = replay.BaoReplay.simulate({ difficulty, fps, width: 960, seed: 12345, entity, map: 'Halloween',ghost_eligible:withGhost }, { mechanics: 5, ticks, flaps, resizes });
     assert.deepEqual({ score: result.score, candy: result.candy, dead: result.dead }, { score, candy, dead }, `${difficulty} ${fps} FPS`);
     assert.equal(result.ghostCollected,vm.runInContext('ghostCollected',scope),`Ghost collection ${fps} FPS`);
     if(withGhost&&result.ghostCollected)exercisedGhostCollection=true;

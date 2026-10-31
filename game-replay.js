@@ -15,11 +15,11 @@
     if(flaps.some((n,i)=>!Number.isSafeInteger(n)||n<0||n>=payload.ticks||(i&&n<flaps[i-1])))throw Error('Invalid flap events');
     if(resizes.some((e,i)=>!Array.isArray(e)||e.length!==2||!Number.isSafeInteger(e[0])||e[0]<0||e[0]>=payload.ticks||!Number.isFinite(e[1])||e[1]<160||e[1]>3840||(i&&e[0]<resizes[i-1][0])))throw Error('Invalid resize events');
     const next=random(challenge.seed),effect=random((challenge.seed^0x5bd1e995)>>>0),gap=cfg.gap,PW=60,PD=480,H=540;
-    const ghostRandom=random((challenge.seed^0x31a63f09)>>>0),ghostEligible=(payload.mechanics===3||payload.mechanics===4)&&challenge.ghost_eligible===true&&challenge.entity==='Witch'&&challenge.difficulty==='Nightmare';
+    const ghostRandom=random((challenge.seed^0x31a63f09)>>>0),sealRandom=random((challenge.seed^0x51ea1a7)>>>0),ghostEligible=(payload.mechanics===3||payload.mechanics===4||payload.mechanics===5)&&challenge.ghost_eligible===true&&challenge.entity==='Witch'&&challenge.difficulty==='Nightmare';
     let width=Number(challenge.width),frame=0,score=0,candy=0,dead=false,flapIndex=0,resizeIndex=0,gapNumber=0,ghostCollected=false;
     let player={x:120,y:H/2,r:14,vy:-10},pipes=[];
     const topFor=prev=>{let lo=60,hi=H-gap-60;if(prev!==undefined){lo=Math.max(lo,prev-50);hi=Math.min(hi,prev+220);if(lo>hi){lo=60;hi=H-gap-60}}return next()*(hi-lo)+lo};
-    const make=(x,topHeight)=>{const candySpawn=next()<cfg.candy;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<ghostChance(gapNumber,payload.mechanics);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}};
+    const make=(x,topHeight)=>{const candySpawn=next()<cfg.candy;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<ghostChance(gapNumber,payload.mechanics);const seals=payload.mechanics===5&&challenge.entity==='Ghost'?[-270,-120,30].map(dx=>({dx,y:45+sealRandom()*(H-150)})):[];return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost,seals}};
     pipes.push(make(width,(H-gap)/2));
     let completedTicks=0;
     for(let tick=0;tick<payload.ticks;tick++) {
@@ -36,7 +36,7 @@
         pipe.x-=speed*step;
         if(!pipe.scored&&player.x>pipe.x+PW){pipe.scored=true;score++}
         if(challenge.entity!=='Ghost'&&player.x+player.r>pipe.x&&player.x-player.r<pipe.x+PW&&(player.y-player.r<pipe.topHeight||player.y+player.r>pipe.topHeight+gap))dead=true;
-        if(challenge.entity==='Ghost'&&Math.hypot(player.x-(pipe.x+PW/2),player.y-(pipe.topHeight+gap/2+60))<player.r+12)dead=true;
+        if(challenge.entity==='Ghost'&&(payload.mechanics===5?pipe.seals.some(seal=>Math.hypot(player.x-(pipe.x+seal.dx),player.y-seal.y)<player.r+12):Math.hypot(player.x-(pipe.x+PW/2),player.y-(pipe.topHeight+gap/2+60))<player.r+12))dead=true;
         if(!dead&&pipe.ghost&&!ghostCollected&&Math.hypot(player.x-(pipe.x+PW/2),player.y-(pipe.topHeight+gap/2))<player.r+12){pipe.ghost=false;ghostCollected=true}
         if(!dead&&pipe.candy&&Math.hypot(player.x-(pipe.x+PW/2),player.y-(pipe.topHeight+gap/2))<player.r+12){pipe.candy=false;const updated=payload.mechanics>=2;candy+=challenge.entity==='Witch'&&effect()<(updated?.5:.2)?(updated?3:2):1}
       }

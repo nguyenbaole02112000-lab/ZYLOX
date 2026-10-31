@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),crypto=require('node:crypto');
 const root=__dirname,out=path.join(root,'.tools','site-build');
 const pages=['index.html','setting.html','halloween.html'];
-const files=new Set([...pages,'assets/music/amen-break.mp3','assets/bao-brand.png']);
+const files=new Set([...pages,'assets/music/amen-break.mp3','assets/bao-brand.png','bat-up.webp','bat-down.webp','witch-horizontal.png']);
 for(const page of pages){
   const html=fs.readFileSync(path.join(root,page),'utf8');
   for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){

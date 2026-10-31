@@ -79,7 +79,7 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
       await page.locator(`[data-entity="${entity}"]`).click();
       assert.equal(await page.locator('.e-map-item').getAttribute('data-label'),'HALLOWEEN');
     }
-    assert.match(await page.locator('.e-passive-content').innerText(),/Night Only/);
+    assert.match(await page.locator('.e-passive-content').innerText(),/Halloween Seal Vulnerability/);
     await page.locator('#entityView').getByRole('button',{name:'← Back'}).click();
     await page.getByText('Setting',{exact:true}).click();
     await page.locator('#physicsFPS').selectOption('120');

@@ -17,10 +17,13 @@
 <div id="gameHint" role="status"><strong>Ready to fly?</strong>Press Space or ↑, or click / tap to start and flap.</div>
 <div id="milestoneHUD">MILESTONE: 0</div>
 <div id="exitGameBtn" onclick="exitToLobby()" title="Exit"></div>
-</div><script src="game-replay.js?v=ghost-chance-1"></script><script src="entity-art.js"></script><script>
+</div><script src="game-replay.js?v=ghost-seals-5"></script><script src="entity-art.js"></script><script src="witch-trial-art.js"></script><script src="bat-trial-art.js"></script><script src="ghost-seals.js"></script><script>
+const trialEntity=new URLSearchParams(location.search).get('trial');
+const isWitchTrial=trialEntity==='witch',isGhostTrial=trialEntity==='ghost',isEntityTrial=isWitchTrial||isGhostTrial;
+if(isEntityTrial){const label=document.createElement('div');label.textContent='TRIAL · PROGRESS NOT SAVED';label.style.cssText='position:absolute;bottom:1cqw;left:50%;transform:translateX(-50%);z-index:300;color:#e0c8ff;background:rgba(20,10,36,.8);border-radius:6px;padding:4px 8px;font:600 12px sans-serif;pointer-events:none;white-space:nowrap';document.querySelector('.gc').appendChild(label)}
 function bestKey(m,d){return 'halloween_best_'+m.toLowerCase().replace(/\s+/g,'_')+'_'+d.toLowerCase()}
 function loadBest(m,d){return window.ZyloxAccount?.getBest(bestKey(m,d))||0}
-function saveBest(m,d,v){window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
+function saveBest(m,d,v){if(!isEntityTrial)window.ZyloxAccount?.saveBest(bestKey(m,d),v)}
 localStorage.setItem('zylox_time','Night');
 let diffName=localStorage.getItem('zylox_diff')||'Easy',mapName=localStorage.getItem('zylox_map')||'Halloween',best=loadBest(mapName,diffName);
 const diffConfigs = {
@@ -37,12 +40,12 @@ const milestoneEl=document.getElementById('milestoneHUD');
 milestoneEl.textContent='MILESTONE: '+best;
 const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d'),BH=540,PW=60,PD=480,GRAV=.7,FLP=-10;
 let W=960,H=BH,scl=1,cSpd=4,state='ready',score=0,frame=0,gameplayRandom=Math.random,effectRandom=Math.random,onlineRun=null;
-let entity=localStorage.getItem('zylox_entity')||'Bat',doubleNotice=0,ghostEligible=false,ghostCollected=false,ghostRandom=Math.random,gapNumber=0;
+let entity=isWitchTrial?'Witch':isGhostTrial?'Ghost':(localStorage.getItem('zylox_entity')||'Bat'),doubleNotice=0,ghostEligible=false,ghostCollected=false,ghostRandom=Math.random,sealRandom=Math.random,gapNumber=0;
 const cr={x:120,y:H/2,r:14,vy:0,rot:0};let pipes=[],parts=[];
 function candyTotal(){const saved=window.ZyloxAccount?.getCandy()||0;return saved+(onlineRun&&!onlineRun.admin?Math.max(0,onlineRun.collectedCandy-onlineRun.syncedCandy):0)}
-function addCandy(){if(onlineRun?.admin)return;if(onlineRun)onlineRun.collectedCandy++;window.ZyloxAccount?.addCandy()}
+function addCandy(){if(isEntityTrial||onlineRun?.admin)return;if(onlineRun)onlineRun.collectedCandy++;window.ZyloxAccount?.addCandy()}
 window.BaoRunSynced=run=>{if(onlineRun?.id===run.id&&Number.isSafeInteger(run.collectedCandy))onlineRun.syncedCandy=Math.max(onlineRun.syncedCandy,run.collectedCandy)};
-function makePipe(x,topHeight){const candySpawn=mapName==='Halloween'&&gameplayRandom()<cfg.candyChance;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<Math.min(1,gapNumber*.01);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost}}
+function makePipe(x,topHeight){const candySpawn=mapName==='Halloween'&&gameplayRandom()<cfg.candyChance;gapNumber++;const ghost=ghostEligible&&!ghostCollected&&ghostRandom()<Math.min(1,gapNumber*.01);return {x,topHeight,scored:false,ghost,candy:candySpawn&&!ghost,seals:BaoGhostSeals.create(entity,mapName,H,sealRandom)}}
 let isFlapping = false;
 function drawBatWings(x, y) {
   ctx.save();ctx.translate(x + 7, y - 3);ctx.rotate(86 * Math.PI / 180); 
@@ -67,6 +70,7 @@ function drawCreature() {
   ctx.translate(cr.x, cr.y);
   ctx.rotate(cr.rot);
   ctx.scale(0.8, 0.8); 
+  if(window.BaoTrialBat?.draw(ctx,isFlapping)){ctx.restore();return;}
   drawBatBody(0, 0);  
   if (isFlapping) drawBatWings(0, 0); 
   else {ctx.save();ctx.translate(-8, 0);ctx.scale(1, -1);drawBatWings(0, 2);ctx.restore();}
@@ -96,7 +100,7 @@ function drawPipe(p){
   ctx.stroke();
   ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center';
   ctx.fillText('R.I.P', p.x + PW/2, p.topHeight+PG + 60);
-  if(entity==='Ghost'){ctx.save();ctx.translate(p.x+PW/2,p.topHeight+PG/2+60);ctx.strokeStyle='#ffb04c';ctx.shadowColor='#ff7d25';ctx.shadowBlur=14;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.moveTo(0,-8);ctx.lineTo(0,8);ctx.stroke();ctx.restore()}
+  if(entity==='Ghost')BaoGhostSeals.draw(ctx,p);
 }
 function drawBackground(){
   const sg = ctx.createLinearGradient(0, 0, 0, H);sg.addColorStop(0, '#05020a');sg.addColorStop(.6, '#140a24');sg.addColorStop(1, '#1a0a2e');ctx.fillStyle = sg;ctx.fillRect(0, 0, W, H);
@@ -128,8 +132,9 @@ window.addEventListener('resize',resizeCanvas);resizeCanvas();
 function resetGame(){state='playing';score=0;frame=0;cSpd=pSpd;pipes=[];parts=[];gapNumber=0;ghostCollected=false;cr.y=H/2;cr.vy=0;cr.rot=0;pipes.push(makePipe(W,(H-PG)/2));}
 async function beginGame(){
   if(state==='starting')return;
-  onlineRun=null;gameplayRandom=Math.random;ghostRandom=Math.random;ghostEligible=false;
-  if(window.ZyloxAccount?.isOnline){
+  cr.r=entity==='Witch'&&(isWitchTrial||window.ZyloxAccount?.isOfflineGuest)?18:14;
+  onlineRun=null;gameplayRandom=Math.random;ghostRandom=Math.random;sealRandom=Math.random;ghostEligible=false;
+  if(window.ZyloxAccount?.isOnline&&!isEntityTrial){
     state='starting';const width=W,requestStarted=performance.now();
     try{
       const challenge=await window.BaoCloud.rpc('start_game',{map_key:mapName,difficulty_key:diffName,entity_key:localStorage.getItem('zylox_entity')||'Bat',fps:physicsFPS,width_value:width});
@@ -139,11 +144,11 @@ async function beginGame(){
       const safeRemaining=cutoff-serverNow-(performance.now()-requestStarted)-1500;
       if(!challenge.admin_mode&&safeRemaining<=0)throw Error('Daily quests are resetting. Please try again shortly.');
       onlineRun={id:challenge.id,owner:window.ZyloxAccount.account.id,admin:challenge.admin_mode,collectedCandy:0,syncedCandy:0,
-        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{mechanics:4,ticks:0,flaps:[],resizes:[]}};
-      gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);ghostRandom=window.BaoReplay.random((challenge.seed^0x31a63f09)>>>0);ghostEligible=!!challenge.ghost_eligible&&!challenge.admin_mode&&entity==='Witch'&&diffName==='Nightmare';window.BaoRuns.notice('');
+        deadline:performance.now()+safeRemaining,maxTicks:Math.min(physicsFPS*3600,Math.floor((cutoff-started-10)*physicsFPS/1000)),replay:{mechanics:5,ticks:0,flaps:[],resizes:[]}};
+      gameplayRandom=window.BaoReplay.random(challenge.seed);effectRandom=window.BaoReplay.random((challenge.seed^0x5bd1e995)>>>0);ghostRandom=window.BaoReplay.random((challenge.seed^0x31a63f09)>>>0);sealRandom=window.BaoReplay.random((challenge.seed^0x51ea1a7)>>>0);ghostEligible=!!challenge.ghost_eligible&&!challenge.admin_mode&&entity==='Witch'&&diffName==='Nightmare';window.BaoRuns.notice('');
     }catch(error){state='ready';window.BaoRuns?.notice(error.message||'Unable to start an online game.');return}
   }
-  if(window.ZyloxAccount?.isOfflineGuest){const ghost=window.ZyloxAccount.guestGhostState();ghostEligible=ghost.purchased&&!ghost.found&&!ghost.claimed&&entity==='Witch'&&diffName==='Nightmare';}
+  if(!isEntityTrial&&window.ZyloxAccount?.isOfflineGuest){const ghost=window.ZyloxAccount.guestGhostState();ghostEligible=ghost.purchased&&!ghost.found&&!ghost.claimed&&entity==='Witch'&&diffName==='Nightmare';}
   resetGame();cr.vy=FLP;window.ZyloxSound?.play('flap');
 }
 function flap(){if(!window.ZyloxAccount?.ready)return;if(state==='ready'||state==='gameover')beginGame();else if(state==='playing'){if(onlineRun&&!onlineRun.admin&&onlineRun.replay.flaps.at(-1)!==onlineRun.replay.ticks)onlineRun.replay.flaps.push(onlineRun.replay.ticks);cr.vy=FLP;window.ZyloxSound?.play('flap')}}
@@ -158,7 +163,7 @@ function update(step){
     p.x-=cSpd*step;
     if(!p.scored&&cr.x>p.x+PW){p.scored=true;score++;window.ZyloxSound?.play('score');if(score>best&&!onlineRun?.admin){best=score;saveBest(mapName,diffName,best);milestoneEl.textContent='MILESTONE: '+best;}}
     if(entity!=='Ghost'&&cr.x+cr.r>p.x && cr.x-cr.r<p.x+PW){if(cr.y-cr.r<p.topHeight||cr.y+cr.r>p.topHeight+PG)gameOver();}
-    if(entity==='Ghost'&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2+60))<cr.r+12)gameOver();
+    if(entity==='Ghost'&&BaoGhostSeals.hits(cr,p))gameOver();
     if(state==='playing'&&p.ghost&&!ghostCollected&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.ghost=false;ghostCollected=true;if(onlineRun&&!onlineRun.admin)onlineRun.ghostPending=true;if(window.ZyloxAccount?.isOfflineGuest)window.ZyloxAccount.findGuestGhost();window.ZyloxSound?.play('candy');}
     if(state==='playing'&&p.candy&&Math.hypot(cr.x-(p.x+PW/2),cr.y-(p.topHeight+PG/2))<cr.r+12){p.candy=false;addCandy();if(entity==='Witch'&&effectRandom()<.5){addCandy();addCandy();doubleNotice=90}window.ZyloxSound?.play('candy');}
   }
@@ -227,4 +232,4 @@ function exitToLobby(){if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlin
 window.addEventListener('pagehide',()=>{if(onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&onlineRun&&!onlineRun.admin)window.BaoRuns?.save(onlineRun)});
 document.addEventListener('zylox-progress-updated',()=>{best=loadBest(mapName,diffName);milestoneEl.textContent='MILESTONE: '+best});
-</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=candy-coin-1"></script><script src="online-runs.js?v=ghost-chance-1"></script></body></html>
+</script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=email-notice-2"></script><script src="online-runs.js?v=ghost-seals-5"></script></body></html>

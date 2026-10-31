@@ -5,7 +5,7 @@ const mock=`
 const player=()=>JSON.parse(localStorage.getItem('mock-player')||'null');
 window.BaoCloud={
  profile:async()=>localStorage.getItem('mock-session')==='yes'?player():null,
- signup:async(username,email,password)=>{if(localStorage.getItem('mock-signup-error')==='yes')throw Error('{}');const u={id:'mock-id',username,displayName:username,email,isGuest:false};localStorage.setItem('mock-player',JSON.stringify(u));localStorage.setItem('mock-password',password);localStorage.setItem('mock-session','yes');return {session:{},user:u}},
+ signup:async(username,email,password)=>{if(localStorage.getItem('mock-signup-error')==='yes')throw Error('{}');const u={id:'mock-id',username,displayName:username,email,isGuest:false};if(localStorage.getItem('mock-confirmation')==='yes')return {session:null,user:u};localStorage.setItem('mock-player',JSON.stringify(u));localStorage.setItem('mock-password',password);localStorage.setItem('mock-session','yes');return {session:{},user:u}},
  login:async(email,password)=>{if(player()?.email!==email||localStorage.getItem('mock-password')!==password)throw Error('Invalid credentials');localStorage.setItem('mock-session','yes')},
  logout:async()=>localStorage.removeItem('mock-session'),
  getProgress:async()=>({coin:25,candy:6,bestScores:{halloween_best_halloween_easy:4}}),
@@ -29,7 +29,14 @@ window.BaoCloud={
   await page.getByRole('button',{name:'Sign Up',exact:true}).click();
   await page.getByText('The server did not respond. Please try again.').waitFor();
   assert.equal(await page.locator('[name=password]').inputValue(),'');
-  await page.evaluate(()=>localStorage.removeItem('mock-signup-error'));await page.locator('[name=password]').fill('testpass123');
+  await page.evaluate(()=>{localStorage.removeItem('mock-signup-error');localStorage.setItem('mock-confirmation','yes')});await page.locator('[name=password]').fill('testpass123');
+  await page.getByRole('button',{name:'Sign Up',exact:true}).click();
+  await page.getByText('Please confirm email link to log in the game',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'OK',exact:true}).click();
+  assert.equal(await page.locator('[name=email]').inputValue(),'test@example.invalid');
+  await page.getByRole('button',{name:'Create Account'}).click();
+  await page.evaluate(()=>localStorage.removeItem('mock-confirmation'));
+  await page.locator('[name=username]').fill('TestPlayer');await page.locator('[name=email]').fill('test@example.invalid');await page.locator('[name=password]').fill('testpass123');
   await page.getByRole('button',{name:'Sign Up',exact:true}).click();
   await page.waitForFunction(()=>window.ZyloxAccount.ready&&window.ZyloxAccount.isOnline);
   assert.equal(await page.evaluate(()=>window.ZyloxAccount.getCoin()),25);

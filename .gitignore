@@ -19,3 +19,6 @@ build/
 .tools/
 !assets/music/amen-break.mp3
 !assets/bao-brand.png
+!bat-up.webp
+!bat-down.webp
+!witch-horizontal.png
