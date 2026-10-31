@@ -2,7 +2,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'.tools','site-build');
 const files=new Set(JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8')).map(entry=>entry.file));
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mp3':'audio/mpeg','.png':'image/png'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mp3':'audio/mpeg','.png':'image/png','.webp':'image/webp'};
 http.createServer((req,res)=>{
   let name;
   try{name=decodeURIComponent(new URL(req.url,'http://localhost').pathname).replace(/^\/+/, '')||'index.html'}catch(_){res.writeHead(400).end();return}

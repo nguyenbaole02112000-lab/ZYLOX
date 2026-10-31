@@ -49,6 +49,8 @@
 .la{position:absolute;top:3cqw;left:3cqw;z-index:11;cursor:pointer;transition:transform .2s}
 .la:hover{transform:scale(1.05);filter:drop-shadow(0 0 1.5cqw rgba(138,92,255,.8))}
 .la img{width:12cqw;height:auto;object-fit:contain;filter:drop-shadow(0 .5cqw 1cqw rgba(0,0,0,.8))}
+.fullscreen-toggle{position:absolute;top:5.4cqw;left:50%;transform:translateX(-50%);z-index:15;padding:.55cqw 1.3cqw;border:1px solid #b794f6;border-radius:.65cqw;background:#34214e;color:#ffe276;font:700 clamp(11px,1.2cqw,18px) 'Segoe UI',sans-serif;white-space:nowrap;cursor:pointer}
+.fullscreen-toggle:hover{background:#513479}.fullscreen-toggle:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .update-log-open{position:absolute;top:12cqw;right:2cqw;z-index:12;display:flex;align-items:center;gap:.7cqw;padding:1cqw 1.4cqw;border:.2cqw solid #a77be4;border-radius:.8cqw;background:rgba(22,11,40,.92);color:#eee3ff;font-family:'Cinzel',serif;font-size:1.45cqw;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 1.4cqw #8154c866;white-space:nowrap}
 .update-log-open:hover{background:#3c245b;border-color:#e0c8ff}.update-log-open:focus-visible,.update-log-close:focus-visible,.update-log-item:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .update-log-overlay{position:absolute;inset:0;z-index:200;background:rgba(8,4,15,.34);backdrop-filter:blur(1px);display:flex;justify-content:center;align-items:center;padding:3cqw}.update-log-overlay[hidden]{display:none}
@@ -95,6 +97,7 @@
 </style></head><body><div class="gc">
 <div class="bg" id="lobbyBg"></div><div class="ov"></div>
 <div class="la" onclick="openFeedback()"><img src="assets/bao-brand.png" alt="Lê Nguyễn Bảo"></div>
+<button class="fullscreen-toggle" id="fullscreenToggle" type="button" aria-pressed="false">Fullscreen Mode: OFF</button>
 <button class="update-log-open" id="updateLogOpen" type="button" aria-haspopup="dialog">UPDATE LOG</button>
 <div class="mc"><div class="miw" id="menuIcon" onclick="window.location.href='setting.html'"><svg class="menu-svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#b794f6" stroke-width="3"/><g fill="#b794f6"><rect x="25" y="30" width="28" height="10" rx="5"/><rect x="25" y="45" width="28" height="10" rx="5"/><rect x="25" y="60" width="28" height="10" rx="5"/><circle cx="66" cy="35" r="6"/><circle cx="66" cy="50" r="6"/><circle cx="66" cy="65" r="6"/></g></svg></div><div class="menu-label">MENU</div></div>
 <div class="ui" id="lobby">
@@ -197,4 +200,4 @@ function submitFeedback(){
 function startGame(){normalizeMapTime();if(!entityFitsMap(equipMap)){showEntityNotice();return}localStorage.setItem('zylox_speed',diffs[diffIdx].speed);localStorage.setItem('zylox_diff',diffs[diffIdx].name);localStorage.setItem('zylox_map',equipMap);window.location.href='halloween.html?v=gameover-fix'}
 updateDiffUI();refreshLobby();
 document.addEventListener('zylox-progress-updated', refreshLobby);
-</script><script src="update-log.js"></script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=email-notice-2"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-seals-5"></script><script src="online-ui.js?v=shop-quantity-2"></script></body></html>
+</script><script src="update-log.js"></script><script src="music.js"></script><script src="vendor/supabase-js-2.57.4.js"></script><script src="supabase-client.js"></script><script src="account.js?v=email-notice-2"></script><script src="admin.js?v=ghost-weekly-1"></script><script src="online-runs.js?v=ghost-seals-5"></script><script src="online-ui.js?v=shop-quantity-2"></script><script src="fullscreen.js"></script></body></html>
