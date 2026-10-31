@@ -87,6 +87,30 @@ window.ZyloxAccount={ready:true,isOnline:true,account:{id:'test'},getCoin:()=>20
     await page.evaluate(()=>localStorage.setItem('mock-admin','yes'));await page.reload();
     await page.getByRole('button',{name:'Admin Mode: OFF'}).click();
     await page.getByRole('button',{name:'Admin Mode: ON'}).waitFor();
+    const layoutSelectors=['.la','.mc','.menu-label','.coin-balance','.leaderboard-preview','.leaderboard-open',
+      '.leaderboard-preview .leaderboard-row','#fullscreenToggle','#lobby button[style]','.update-log-open','.gn','.pb','#mapSelector','.map-choice-label'];
+    const textSelectors=new Set(['.menu-label','.coin-balance','.leaderboard-preview','.leaderboard-open',
+      '.leaderboard-preview .leaderboard-row','#fullscreenToggle','#lobby button[style]','.update-log-open','.gn','.pb','.map-choice-label']);
+    await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important}'});
+    async function lobbyLayout(width,height){
+      await page.setViewportSize({width,height});
+      return page.evaluate(selectors=>{
+        const container=document.querySelector('.gc').getBoundingClientRect();
+        return selectors.map(selector=>{
+          const element=document.querySelector(selector),box=element.getBoundingClientRect();
+          return {selector,x:(box.x-container.x)/container.width,y:(box.y-container.y)/container.width,
+            width:box.width/container.width,height:box.height/container.width,
+            font:parseFloat(getComputedStyle(element).fontSize)/container.width};
+        });
+      },layoutSelectors);
+    }
+    const largeLayout=await lobbyLayout(1200,675);
+    const smallLayout=await lobbyLayout(360,203);
+    for(let i=0;i<largeLayout.length;i++)for(const property of ['x','y','width','height',...(textSelectors.has(largeLayout[i].selector)?['font']:[])]){
+      assert.ok(Math.abs(largeLayout[i][property]-smallLayout[i][property])<.012,
+        `${largeLayout[i].selector} ${property} must scale with the game`);
+    }
+    await page.setViewportSize({width:1000,height:700});
     await page.goto('https://test.github.io/setting.html');
     assert.equal(await page.locator('button.tab').filter({hasText:'Quests'}).locator('svg').count(),1);
     await page.getByText('Entity',{exact:true}).click();

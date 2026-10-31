@@ -5,7 +5,7 @@
   let button;
   if(panel){
     button=document.createElement('button');button.type='button';button.hidden=true;
-    button.style.cssText='position:absolute;top:1%;left:50%;transform:translateX(-50%);z-index:50;background:#382258;color:#f8dc7c;border:1px solid #b794f6;border-radius:8px;padding:5px 12px;font-weight:bold;cursor:pointer;pointer-events:auto';
+    button.style.cssText='position:absolute;top:1%;left:50%;transform:translateX(-50%);z-index:50;background:#382258;color:#f8dc7c;border:.08cqw solid #b794f6;border-radius:.55cqw;padding:.35cqw .8cqw;font:bold 1.05cqw Segoe UI,sans-serif;cursor:pointer;pointer-events:auto;white-space:nowrap';
     panel.appendChild(button);
     button.addEventListener('click',async()=>{
       button.disabled=true;
